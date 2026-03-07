@@ -122,4 +122,5 @@ Planned improvements include:
 ## Author
 
 Raymond Pius
-AI Product Manager building intelligent product analytics systems.
+
+AI Product Manager building intelligent product analytics systems
