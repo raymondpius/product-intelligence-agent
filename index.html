@@ -1,1799 +1,3520 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>EDA Agent · SaaS Intelligence Framework</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<title>Product Intelligence Agent</title>
+
+<!-- CDN Libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+
 <style>
-  :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #16161f;
-    --border: #1e1e2e;
-    --accent: #7c6aff;
-    --accent2: #3ecfb2;
-    --accent3: #ff6b6b;
-    --accent4: #f9c74f;
-    --text: #e8e8f0;
-    --muted: #6b6b80;
-    --dim: #3a3a50;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-weight: 300;
-    line-height: 1.7;
-    overflow-x: hidden;
-  }
-
-  /* NOISE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.4;
-  }
-
-  /* GRID BACKGROUND */
-  .grid-bg {
-    position: fixed;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(124,106,255,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(124,106,255,0.03) 1px, transparent 1px);
-    background-size: 48px 48px;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  /* NAV */
-  nav {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-    padding: 18px 48px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: rgba(10,10,15,0.85);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-  }
-
-  .nav-logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 15px;
-    letter-spacing: 0.08em;
-    color: var(--accent);
-    text-transform: uppercase;
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 32px;
-    list-style: none;
-  }
-
-  .nav-links a {
-    color: var(--muted);
-    text-decoration: none;
-    font-size: 13px;
-    letter-spacing: 0.04em;
-    transition: color 0.2s;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .nav-links a:hover { color: var(--text); }
-
-  .nav-badge {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    padding: 4px 12px;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    border-radius: 2px;
-    letter-spacing: 0.1em;
-  }
-
-  /* HERO */
-  .hero {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    padding: 120px 48px 80px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .hero-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-    width: 100%;
-  }
-
-  .hero-eyebrow {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--accent2);
-    text-transform: uppercase;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .hero-eyebrow::before {
-    content: '';
-    display: inline-block;
-    width: 32px;
-    height: 1px;
-    background: var(--accent2);
-  }
-
-  .hero-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: clamp(48px, 7vw, 88px);
-    line-height: 0.95;
-    letter-spacing: -0.03em;
-    margin-bottom: 32px;
-  }
-
-  .hero-title .line2 {
-    color: transparent;
-    -webkit-text-stroke: 1px rgba(124,106,255,0.5);
-  }
-
-  .hero-title .accent-word {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .hero-desc {
-    max-width: 580px;
-    font-size: 17px;
-    color: var(--muted);
-    line-height: 1.8;
-    margin-bottom: 48px;
-  }
-
-  .hero-ctas {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    color: white;
-    padding: 14px 32px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    border: none;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s;
-    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
-  }
-
-  .btn-primary:hover { background: #9b8dff; transform: translateY(-2px); }
-
-  .btn-ghost {
-    color: var(--muted);
-    padding: 14px 32px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-block;
-    transition: all 0.2s;
-    background: transparent;
-  }
-
-  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
-
-  .hero-stats {
-    display: flex;
-    gap: 48px;
-    margin-top: 72px;
-    padding-top: 48px;
-    border-top: 1px solid var(--border);
-  }
-
-  .stat-item {}
-  .stat-num {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 36px;
-    color: var(--text);
-    display: block;
-    line-height: 1;
-  }
-  .stat-num span { color: var(--accent); }
-  .stat-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-top: 6px;
-    display: block;
-  }
-
-  /* GLOW BLOB */
-  .glow-blob {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(120px);
-    pointer-events: none;
-  }
-  .blob1 {
-    width: 500px; height: 500px;
-    background: rgba(124,106,255,0.08);
-    top: -100px; right: -100px;
-  }
-  .blob2 {
-    width: 300px; height: 300px;
-    background: rgba(62,207,178,0.06);
-    bottom: 100px; right: 200px;
-  }
-
-  /* SECTIONS */
-  section {
-    position: relative;
-    z-index: 1;
-    padding: 100px 48px;
-  }
-
-  .section-inner {
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-
-  .section-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--accent2);
-    text-transform: uppercase;
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .section-label::before {
-    content: '';
-    display: inline-block;
-    width: 20px;
-    height: 1px;
-    background: var(--accent2);
-  }
-
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: clamp(28px, 4vw, 44px);
-    line-height: 1.1;
-    letter-spacing: -0.02em;
-    margin-bottom: 16px;
-  }
-
-  .section-sub {
-    color: var(--muted);
-    font-size: 16px;
-    max-width: 560px;
-    margin-bottom: 64px;
-  }
-
-  /* ARCHITECTURE */
-  .arch-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 2px;
-    background: var(--border);
-    border: 1px solid var(--border);
-  }
-
-  .arch-card {
-    background: var(--surface);
-    padding: 36px;
-    position: relative;
-    overflow: hidden;
-    transition: background 0.3s;
-  }
-
-  .arch-card:hover { background: var(--surface2); }
-
-  .arch-card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 3px;
-    height: 100%;
-  }
-
-  .arch-card.orchestrator::before { background: var(--accent); }
-  .arch-card.data-eng::before { background: var(--accent2); }
-  .arch-card.analyst::before { background: var(--accent4); }
-  .arch-card.hypothesis::before { background: var(--accent3); }
-
-  .arch-icon {
-    width: 40px;
-    height: 40px;
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-  }
-
-  .arch-card-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-
-  .arch-card-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 20px;
-    margin-bottom: 12px;
-  }
-
-  .arch-card-desc {
-    font-size: 14px;
-    color: var(--muted);
-    line-height: 1.7;
-    margin-bottom: 20px;
-  }
-
-  .arch-tools {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .tool-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    padding: 3px 10px;
-    background: var(--bg);
-    border: 1px solid var(--dim);
-    color: var(--muted);
-    letter-spacing: 0.05em;
-  }
-
-  .arch-card.orchestrator .tool-tag { border-color: rgba(124,106,255,0.3); color: var(--accent); }
-  .arch-card.data-eng .tool-tag { border-color: rgba(62,207,178,0.3); color: var(--accent2); }
-  .arch-card.analyst .tool-tag { border-color: rgba(249,199,79,0.3); color: var(--accent4); }
-  .arch-card.hypothesis .tool-tag { border-color: rgba(255,107,107,0.3); color: var(--accent3); }
-
-  /* FLOW */
-  .flow-steps {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  .flow-step {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    gap: 32px;
-    padding: 40px 0;
-    border-bottom: 1px solid var(--border);
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s, transform 0.5s;
-  }
-
-  .flow-step.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .step-num {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 48px;
-    color: var(--dim);
-    line-height: 1;
-    padding-top: 4px;
-  }
-
-  .step-content {}
-  .step-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    color: var(--accent);
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .step-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 22px;
-    margin-bottom: 12px;
-  }
-
-  .step-desc {
-    font-size: 15px;
-    color: var(--muted);
-    max-width: 640px;
-    line-height: 1.8;
-  }
-
-  .step-example {
-    margin-top: 16px;
-    padding: 16px 20px;
-    background: var(--surface);
-    border-left: 2px solid var(--accent2);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--accent2);
-    line-height: 1.7;
-  }
-
-  /* DEMO INTERACTIVE */
-  .demo-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    overflow: hidden;
-  }
-
-  .demo-header {
-    padding: 20px 28px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--surface2);
-  }
-
-  .demo-title-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .dot { width: 10px; height: 10px; border-radius: 50%; }
-  .dot-r { background: #ff5f56; }
-  .dot-y { background: #febc2e; }
-  .dot-g { background: #27c840; }
-
-  .demo-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    color: var(--muted);
-    margin-left: 8px;
-  }
-
-  .demo-status {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--accent2);
-  }
-
-  .status-dot {
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--accent2);
-    animation: pulse 2s infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.3; }
-  }
-
-  .demo-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    min-height: 520px;
-  }
-
-  .demo-left {
-    padding: 32px;
-    border-right: 1px solid var(--border);
-  }
-
-  .demo-right {
-    padding: 32px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .input-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-  }
-
-  .demo-textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    padding: 16px;
-    line-height: 1.7;
-    resize: none;
-    height: 120px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-
-  .demo-textarea:focus { border-color: var(--accent); }
-  .demo-textarea::placeholder { color: var(--dim); }
-
-  .demo-selects {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .demo-select {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 10px 14px;
-    outline: none;
-    width: 100%;
-    cursor: pointer;
-    transition: border-color 0.2s;
-    appearance: none;
-  }
-
-  .demo-select:focus { border-color: var(--accent); }
-
-  .run-btn {
-    margin-top: 20px;
-    width: 100%;
-    background: var(--accent);
-    color: white;
-    border: none;
-    padding: 14px;
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.2s;
-    position: relative;
-    overflow: hidden;
-  }
-
-  .run-btn:hover { background: #9b8dff; }
-
-  .run-btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-    transform: translateX(-100%);
-    transition: transform 0.4s;
-  }
-
-  .run-btn:hover::after { transform: translateX(100%); }
-
-  .output-area {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .output-tabs {
-    display: flex;
-    gap: 0;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .tab-btn {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    padding: 10px 20px;
-    cursor: pointer;
-    text-transform: uppercase;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-    margin-bottom: -1px;
-  }
-
-  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab-btn:hover:not(.active) { color: var(--text); }
-
-  .output-panel {
-    display: none;
-    flex: 1;
-  }
-
-  .output-panel.active { display: flex; flex-direction: column; gap: 12px; }
-
-  .output-empty {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: var(--dim);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    text-align: center;
-    gap: 12px;
-    border: 1px dashed var(--border);
-    padding: 40px;
-  }
-
-  .output-empty-icon { font-size: 32px; opacity: 0.4; }
-
-  /* hypothesis cards */
-  .hyp-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 16px 20px;
-    border-radius: 0;
-    animation: fadeSlide 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  @keyframes fadeSlide {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-
-  .hyp-card:nth-child(2) { animation-delay: 0.15s; }
-  .hyp-card:nth-child(3) { animation-delay: 0.3s; }
-
-  .hyp-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-  }
-
-  .hyp-confidence {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    padding: 2px 8px;
-  }
-
-  .conf-high { background: rgba(62,207,178,0.1); color: var(--accent2); border: 1px solid rgba(62,207,178,0.2); }
-  .conf-med { background: rgba(249,199,79,0.1); color: var(--accent4); border: 1px solid rgba(249,199,79,0.2); }
-  .conf-low { background: rgba(255,107,107,0.1); color: var(--accent3); border: 1px solid rgba(255,107,107,0.2); }
-
-  .hyp-text {
-    font-size: 13px;
-    color: var(--text);
-    line-height: 1.6;
-    margin-bottom: 8px;
-  }
-
-  .hyp-meta {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    display: flex;
-    gap: 16px;
-  }
-
-  .metric-row {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-
-  .metric-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 16px;
-    animation: fadeSlide 0.4s ease forwards;
-    opacity: 0;
-  }
-  .metric-card:nth-child(2) { animation-delay: 0.1s; }
-  .metric-card:nth-child(3) { animation-delay: 0.2s; }
-  .metric-card:nth-child(4) { animation-delay: 0.3s; }
-
-  .metric-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    margin-bottom: 6px;
-  }
-
-  .metric-value {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 22px;
-  }
-
-  .metric-delta {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    margin-top: 4px;
-  }
-  .delta-up { color: var(--accent3); }
-  .delta-down { color: var(--accent2); }
-
-  .segment-list { display: flex; flex-direction: column; gap: 8px; }
-
-  .seg-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 16px;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    animation: fadeSlide 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  .seg-item:nth-child(2) { animation-delay: 0.1s; }
-  .seg-item:nth-child(3) { animation-delay: 0.2s; }
-  .seg-item:nth-child(4) { animation-delay: 0.3s; }
-
-  .seg-bar-wrap { flex: 1; height: 4px; background: var(--border); }
-  .seg-bar { height: 100%; background: var(--accent); transition: width 1s ease; }
-  .seg-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); min-width: 130px; }
-  .seg-pct { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 40px; text-align: right; }
-
-  .prescription-list { display: flex; flex-direction: column; gap: 12px; }
-
-  .rx-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent);
-    padding: 16px 20px;
-    animation: fadeSlide 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  .rx-card:nth-child(1) { border-left-color: var(--accent); animation-delay: 0s; }
-  .rx-card:nth-child(2) { border-left-color: var(--accent2); animation-delay: 0.15s; }
-  .rx-card:nth-child(3) { border-left-color: var(--accent4); animation-delay: 0.3s; }
-
-  .rx-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 6px;
-  }
-
-  .rx-title {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 14px;
-  }
-
-  .rx-impact {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    padding: 2px 8px;
-    background: rgba(124,106,255,0.1);
-    color: var(--accent);
-    border: 1px solid rgba(124,106,255,0.2);
-  }
-
-  .rx-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
-
-  /* BEAM SEARCH VIZ */
-  .beam-container {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 40px;
-    overflow-x: auto;
-  }
-
-  .beam-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 32px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .beam-title::before {
-    content: '';
-    display: inline-block;
-    width: 3px; height: 12px;
-    background: var(--accent3);
-  }
-
-  .beam-tree {
-    display: flex;
-    gap: 0;
-    min-width: 800px;
-  }
-
-  .beam-level {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    position: relative;
-  }
-
-  .beam-level-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .beam-node {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 10px 14px;
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--text);
-    text-align: center;
-    position: relative;
-    width: 100%;
-    max-width: 160px;
-    transition: all 0.3s;
-    cursor: default;
-  }
-
-  .beam-node:hover { border-color: var(--accent); background: var(--surface); }
-
-  .beam-node.pruned {
-    opacity: 0.3;
-    text-decoration: line-through;
-    color: var(--muted);
-  }
-
-  .beam-node.active {
-    border-color: var(--accent2);
-    background: rgba(62,207,178,0.05);
-    color: var(--accent2);
-  }
-
-  .beam-node.winner {
-    border-color: var(--accent4);
-    background: rgba(249,199,79,0.08);
-    color: var(--accent4);
-    font-weight: 500;
-  }
-
-  .beam-score {
-    font-size: 9px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-
-  .beam-node.active .beam-score { color: var(--accent2); }
-  .beam-node.winner .beam-score { color: var(--accent4); }
-
-  /* DATA INPUTS */
-  .data-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 2px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    margin-bottom: 2px;
-  }
-
-  .data-card {
-    background: var(--surface);
-    padding: 28px 32px;
-    transition: background 0.2s;
-  }
-
-  .data-card:hover { background: var(--surface2); }
-
-  .data-card-icon {
-    font-size: 24px;
-    margin-bottom: 16px;
-  }
-
-  .data-card-name {
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
-    font-size: 16px;
-    margin-bottom: 8px;
-  }
-
-  .data-card-desc {
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.6;
-    margin-bottom: 16px;
-  }
-
-  .data-card-meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .meta-tag {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    padding: 2px 8px;
-    background: var(--bg);
-    border: 1px solid var(--dim);
-    color: var(--muted);
-  }
-
-  /* KPI SECTION */
-  .kpi-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    background: var(--border);
-    border: 1px solid var(--border);
-  }
-
-  .kpi-card {
-    background: var(--surface);
-    padding: 28px 24px;
-    text-align: center;
-    transition: background 0.2s;
-  }
-
-  .kpi-card:hover { background: var(--surface2); }
-
-  .kpi-icon {
-    font-size: 20px;
-    margin-bottom: 12px;
-    display: block;
-  }
-
-  .kpi-name {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 6px;
-  }
-
-  .kpi-val {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 28px;
-  }
-
-  .kpi-sub {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    color: var(--muted);
-    margin-top: 4px;
-  }
-
-  /* FOOTER */
-  footer {
-    position: relative;
-    z-index: 1;
-    padding: 48px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .footer-logo {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800;
-    font-size: 14px;
-    color: var(--accent);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .footer-links {
-    display: flex;
-    gap: 32px;
-    list-style: none;
-  }
-
-  .footer-links a {
-    color: var(--muted);
-    text-decoration: none;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    transition: color 0.2s;
-  }
-
-  .footer-links a:hover { color: var(--text); }
-
-  .footer-copy {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--dim);
-  }
-
-  /* Divider */
-  .section-divider {
-    height: 1px;
-    background: var(--border);
-    max-width: 1100px;
-    margin: 0 auto;
-  }
-
-  /* Loader */
-  .loading-bar {
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent2));
-    animation: loadBar 1.5s ease-in-out;
-    transform-origin: left;
-  }
-
-  @keyframes loadBar {
-    from { transform: scaleX(0); }
-    to { transform: scaleX(1); }
-  }
-
-  .thinking-dots span {
-    animation: blink 1.2s infinite;
-    font-family: 'DM Mono', monospace;
-    color: var(--accent2);
-  }
-  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
-  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0; }
-    40% { opacity: 1; }
-  }
-
-  @media (max-width: 900px) {
-    nav { padding: 16px 24px; }
-    section { padding: 60px 24px; }
-    .hero { padding: 120px 24px 60px; }
-    .arch-grid { grid-template-columns: 1fr; }
-    .demo-body { grid-template-columns: 1fr; }
-    .data-grid { grid-template-columns: 1fr 1fr; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .hero-stats { flex-wrap: wrap; gap: 32px; }
-    .nav-links { display: none; }
-  }
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS & RESET
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --white:        #ffffff;
+  --bg:           #f8f7f4;
+  --bg2:          #f1efe9;
+  --bg3:          #e8e4dc;
+  --border:       #e0dbd2;
+  --border2:      #cdc8be;
+  --ink:          #18160f;
+  --ink2:         #46433a;
+  --ink3:         #8c887e;
+  --ink4:         #b8b4ac;
+  --blue:         #1d4ed8;
+  --blue-light:   #eff4ff;
+  --blue-mid:     #bfcffe;
+  --green:        #166534;
+  --green-light:  #f0fdf4;
+  --green-mid:    #86efac;
+  --amber:        #92400e;
+  --amber-light:  #fffbeb;
+  --amber-mid:    #fcd34d;
+  --red:          #991b1b;
+  --red-light:    #fef2f2;
+  --red-mid:      #fca5a5;
+  --purple:       #5b21b6;
+  --purple-light: #f5f3ff;
+  --purple-mid:   #c4b5fd;
+  --teal:         #0f766e;
+  --teal-light:   #f0fdfa;
+  --teal-mid:     #5eead4;
+  --radius:       8px;
+  --radius-lg:    12px;
+  --shadow-sm:    0 1px 2px rgba(0,0,0,0.05);
+  --shadow:       0 1px 3px rgba(0,0,0,0.06), 0 4px 12px rgba(0,0,0,0.04);
+  --shadow-lg:    0 4px 16px rgba(0,0,0,0.08), 0 24px 48px rgba(0,0,0,0.06);
+}
+
+html { scroll-behavior: smooth; font-size: 15px; }
+
+body {
+  font-family: 'Geist', sans-serif;
+  font-weight: 400;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+  line-height: 1.6;
+}
+
+/* ═══════════════════════════════════════════
+   TOPBAR
+═══════════════════════════════════════════ */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(248,247,244,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 40px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-icon {
+  width: 26px; height: 26px;
+  background: var(--ink);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.brand-icon svg { width: 14px; height: 14px; fill: none; stroke: white; stroke-width: 1.5; }
+
+.brand-name {
+  font-family: 'Instrument Serif', serif;
+  font-size: 16px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.brand-divider { width: 1px; height: 16px; background: var(--border2); }
+
+.brand-sub { font-size: 12px; color: var(--ink3); }
+
+.topbar-right { display: flex; align-items: center; gap: 8px; }
+
+.chip {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 100px;
+  border: 1px solid;
+}
+
+.chip-neutral { background: var(--bg2); color: var(--ink3); border-color: var(--border); }
+.chip-blue    { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+.chip-green   { background: var(--green-light); color: var(--green); border-color: var(--green-mid); }
+
+/* ═══════════════════════════════════════════
+   MAIN LAYOUT
+═══════════════════════════════════════════ */
+.app-container {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 40px 40px 80px;
+}
+
+/* Section wrappers */
+.section {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.section-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-icon {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.icon-upload  { background: var(--blue-light); }
+.icon-summary { background: var(--green-light); }
+.icon-charts  { background: var(--purple-light); }
+.icon-cohort  { background: var(--amber-light); }
+.icon-insight { background: var(--teal-light); }
+.icon-reco    { background: var(--red-light); }
+
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.section-meta { font-size: 12px; color: var(--ink3); }
+
+.section-body { padding: 24px; }
+
+/* ═══════════════════════════════════════════
+   UPLOAD SECTION
+═══════════════════════════════════════════ */
+.upload-zone {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--radius-lg);
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+  background: var(--bg);
+}
+
+.upload-zone:hover, .upload-zone.dragover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0;
+  opacity: 0; cursor: pointer;
+  width: 100%; height: 100%;
+}
+
+.upload-glyph {
+  width: 48px; height: 48px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 22px;
+  box-shadow: var(--shadow);
+}
+
+.upload-title { font-size: 15px; font-weight: 500; color: var(--ink); margin-bottom: 6px; }
+.upload-sub   { font-size: 13px; color: var(--ink3); }
+.upload-sub span { color: var(--blue); font-weight: 500; }
+
+.upload-formats {
+  margin-top: 14px;
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+}
+
+.format-tag {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  padding: 2px 8px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink3);
+}
+
+/* Uploaded file bar */
+.file-bar {
+  display: none;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--green-light);
+  border: 1px solid var(--green-mid);
+  border-radius: var(--radius);
+}
+
+.file-bar.visible { display: flex; }
+
+.file-bar-icon {
+  width: 36px; height: 36px;
+  background: var(--green);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 16px; flex-shrink: 0;
+}
+
+.file-bar-info { flex: 1; }
+.file-bar-name { font-size: 13px; font-weight: 500; color: var(--green); }
+.file-bar-meta { font-size: 11px; color: var(--ink3); font-family: 'Geist Mono', monospace; }
+
+.btn-reset {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--ink3);
+  cursor: pointer;
+  font-family: 'Geist', sans-serif;
+  transition: all 0.15s;
+}
+.btn-reset:hover { border-color: var(--red-mid); color: var(--red); }
+
+/* ═══════════════════════════════════════════
+   DATASET SUMMARY
+═══════════════════════════════════════════ */
+.summary-kpis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.kpi-cell {
+  background: var(--white);
+  padding: 16px 18px;
+  text-align: center;
+}
+
+.kpi-val {
+  font-family: 'Instrument Serif', serif;
+  font-size: 28px;
+  color: var(--ink);
+  line-height: 1;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Column table */
+.col-table-wrap { overflow-x: auto; }
+
+.col-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.col-table thead th {
+  background: var(--bg2);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 500;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.col-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink2);
+  vertical-align: top;
+}
+
+.col-table tbody tr:last-child td { border-bottom: none; }
+.col-table tbody tr:hover td { background: var(--bg); }
+
+.col-name { font-weight: 500; color: var(--ink); font-family: 'Geist Mono', monospace; font-size: 12px; }
+
+.type-badge {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.type-numeric     { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+.type-categorical { background: var(--purple-light); color: var(--purple); border-color: var(--purple-mid); }
+.type-binary      { background: var(--amber-light); color: var(--amber); border-color: var(--amber-mid); }
+.type-id          { background: var(--bg2); color: var(--ink3); border-color: var(--border); }
+
+.null-bar-wrap { display: flex; align-items: center; gap: 8px; }
+.null-bar { flex: 1; height: 4px; background: var(--bg3); border-radius: 2px; min-width: 60px; }
+.null-fill { height: 100%; border-radius: 2px; background: var(--red); }
+.null-pct  { font-size: 11px; font-family: 'Geist Mono', monospace; color: var(--ink3); min-width: 32px; text-align: right; }
+
+.sample-vals { font-size: 11px; color: var(--ink3); font-family: 'Geist Mono', monospace; line-height: 1.5; }
+
+/* Stats grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+}
+
+.stat-card-name {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-nums {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.stat-num-item { text-align: center; }
+
+.stat-num-val {
+  font-family: 'Instrument Serif', serif;
+  font-size: 17px;
+  color: var(--ink);
+  display: block;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stat-num-label {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink4);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   CHARTS & DISTRIBUTIONS
+═══════════════════════════════════════════ */
+.charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.chart-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  animation: fadeUp 0.4s ease forwards;
+  opacity: 0;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.chart-card-title {
+  font-size: 12px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chart-canvas-wrap { position: relative; height: 200px; }
+
+/* Correlation heatmap */
+.heatmap-section { margin-top: 28px; }
+
+.heatmap-title {
+  font-size: 12px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.heatmap-scroll { overflow-x: auto; }
+
+.heatmap-table {
+  border-collapse: collapse;
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+}
+
+.heatmap-table th, .heatmap-table td {
+  width: 64px; height: 48px;
+  text-align: center;
+  padding: 2px;
+  border: 1px solid var(--border);
+}
+
+.heatmap-table th {
+  background: var(--bg2);
+  color: var(--ink3);
+  font-weight: 400;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 64px;
+}
+
+.hm-cell { border-radius: 3px; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; }
+
+/* ═══════════════════════════════════════════
+   COHORT ANALYSIS
+═══════════════════════════════════════════ */
+.cohort-controls {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.control-group { display: flex; flex-direction: column; gap: 6px; }
+
+.control-label {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.control-select {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+  min-width: 180px;
+  transition: border-color 0.15s;
+}
+
+.control-select:focus { border-color: var(--blue); }
+
+.btn-analyse {
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex; align-items: center; gap: 7px;
+  align-self: flex-end;
+}
+
+.btn-analyse:hover { background: var(--ink2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+
+.cohort-results { display: none; }
+.cohort-results.visible { display: block; }
+
+.cohort-chart-wrap {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  position: relative;
+  height: 320px;
+}
+
+.cohort-table-wrap { overflow-x: auto; }
+
+.cohort-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cohort-table thead th {
+  background: var(--bg2);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  font-weight: 500;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+
+.cohort-table tbody td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink2);
+}
+
+.cohort-table tbody tr:last-child td { border-bottom: none; }
+.cohort-table tbody tr:hover td { background: var(--bg); }
+
+.delta-positive { color: var(--green); font-weight: 500; }
+.delta-negative { color: var(--red); font-weight: 500; }
+.delta-neutral  { color: var(--ink3); }
+
+/* ═══════════════════════════════════════════
+   HYPOTHESES
+═══════════════════════════════════════════ */
+.hyp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hyp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: all 0.15s;
+  animation: fadeUp 0.3s ease forwards;
+  opacity: 0;
+}
+
+.hyp-item:hover { background: var(--white); border-color: var(--border2); box-shadow: var(--shadow-sm); }
+
+.hyp-num {
+  width: 24px; height: 24px;
+  background: var(--ink);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.hyp-content { flex: 1; }
+
+.hyp-type {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.hyp-text { font-size: 13px; color: var(--ink); line-height: 1.55; }
+
+.hyp-cols {
+  margin-top: 6px;
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+
+.hyp-col-tag {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  padding: 2px 7px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--ink3);
+}
+
+/* ═══════════════════════════════════════════
+   INSIGHTS
+═══════════════════════════════════════════ */
+.insight-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.insight-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  border: 1px solid;
+  animation: fadeUp 0.3s ease forwards;
+  opacity: 0;
+}
+
+.insight-positive {
+  background: var(--green-light);
+  border-color: var(--green-mid);
+}
+
+.insight-negative {
+  background: var(--red-light);
+  border-color: var(--red-mid);
+}
+
+.insight-neutral {
+  background: var(--blue-light);
+  border-color: var(--blue-mid);
+}
+
+.insight-warning {
+  background: var(--amber-light);
+  border-color: var(--amber-mid);
+}
+
+.insight-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.insight-body { flex: 1; }
+.insight-title { font-size: 13px; font-weight: 500; color: var(--ink); margin-bottom: 3px; }
+.insight-detail { font-size: 12px; color: var(--ink3); line-height: 1.5; }
+
+/* ═══════════════════════════════════════════
+   RECOMMENDATIONS
+═══════════════════════════════════════════ */
+.reco-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 14px;
+}
+
+.reco-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  border-left: 3px solid;
+  animation: fadeUp 0.35s ease forwards;
+  opacity: 0;
+  transition: box-shadow 0.15s;
+}
+
+.reco-card:hover { box-shadow: var(--shadow); }
+
+.reco-card.priority-high   { border-left-color: var(--red); }
+.reco-card.priority-medium { border-left-color: var(--amber); }
+.reco-card.priority-low    { border-left-color: var(--green); }
+
+.reco-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.reco-title { font-size: 13px; font-weight: 600; color: var(--ink); }
+
+.priority-badge {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  padding: 2px 8px;
+  border-radius: 100px;
+  border: 1px solid;
+}
+
+.priority-badge.high   { background: var(--red-light); color: var(--red); border-color: var(--red-mid); }
+.priority-badge.medium { background: var(--amber-light); color: var(--amber); border-color: var(--amber-mid); }
+.priority-badge.low    { background: var(--green-light); color: var(--green); border-color: var(--green-mid); }
+
+.reco-desc { font-size: 12px; color: var(--ink3); line-height: 1.6; margin-bottom: 10px; }
+
+.reco-action {
+  font-size: 12px;
+  color: var(--ink2);
+  font-weight: 500;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.reco-action::before { content: '→'; color: var(--blue); }
+
+/* ═══════════════════════════════════════════
+   EMPTY / HIDDEN STATES
+═══════════════════════════════════════════ */
+.hidden { display: none !important; }
+
+.empty-placeholder {
+  padding: 48px 24px;
+  text-align: center;
+  color: var(--ink3);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.empty-placeholder-icon {
+  font-size: 32px;
+  opacity: 0.4;
+}
+
+.empty-placeholder-text { max-width: 300px; line-height: 1.6; }
+
+/* ═══════════════════════════════════════════
+   PROGRESS BAR
+═══════════════════════════════════════════ */
+.progress-bar-wrap {
+  height: 2px;
+  background: var(--bg3);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  display: none;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--blue), var(--teal));
+  border-radius: 1px;
+  transition: width 0.4s ease;
+}
+
+/* ═══════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════ */
+.toast {
+  position: fixed;
+  bottom: 24px; right: 24px;
+  background: var(--ink);
+  color: white;
+  padding: 11px 18px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  box-shadow: var(--shadow-lg);
+  z-index: 999;
+  transform: translateY(16px);
+  opacity: 0;
+  transition: all 0.25s;
+  max-width: 340px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   ANIMATION DELAYS
+═══════════════════════════════════════════ */
+.delay-1 { animation-delay: 0.05s; }
+.delay-2 { animation-delay: 0.10s; }
+.delay-3 { animation-delay: 0.15s; }
+.delay-4 { animation-delay: 0.20s; }
+.delay-5 { animation-delay: 0.25s; }
+.delay-6 { animation-delay: 0.30s; }
+
+/* ═══════════════════════════════════════════
+   CHART INSIGHT BOX
+═══════════════════════════════════════════ */
+.chart-insight {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #fffdf5;
+  border: 1px solid #fde68a;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #78350f;
+  line-height: 1.55;
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+}
+
+.chart-insight-icon { flex-shrink: 0; font-size: 13px; }
+.chart-insight-text { flex: 1; }
+
+/* ═══════════════════════════════════════════
+   PRODUCT INTELLIGENCE SUMMARY PANEL
+═══════════════════════════════════════════ */
+.icon-intel { background: linear-gradient(135deg,#1e3a5f,#0f766e); }
+
+.intel-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.intel-cell {
+  background: var(--white);
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+}
+
+.intel-cell::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 3px;
+}
+
+.intel-cell.cell-risk::before   { background: var(--red); }
+.intel-cell.cell-rate::before   { background: var(--amber); }
+.intel-cell.cell-driver::before { background: var(--blue); }
+.intel-cell.cell-action::before { background: var(--green); }
+
+.intel-cell-label {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.intel-cell-val {
+  font-family: 'Instrument Serif', serif;
+  font-size: 18px;
+  color: var(--ink);
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.intel-cell-sub {
+  font-size: 11px;
+  color: var(--ink3);
+  line-height: 1.5;
+}
+
+.intel-narrative {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.7;
+}
+
+.intel-narrative strong { color: var(--ink); font-weight: 600; }
+
+/* ═══════════════════════════════════════════
+   CHURN DRIVER SECTION
+═══════════════════════════════════════════ */
+.icon-churn { background: #fff1f2; }
+
+.churn-no-col {
+  padding: 32px;
+  text-align: center;
+  color: var(--ink3);
+  font-size: 13px;
+  background: var(--bg2);
+  border: 1px dashed var(--border2);
+  border-radius: var(--radius);
+}
+
+.churn-col-detected {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--green-light);
+  border: 1px solid var(--green-mid);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--green);
+}
+
+.churn-col-detected strong { font-weight: 600; }
+
+.churn-drivers-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.churn-driver-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeUp 0.4s ease forwards;
+  opacity: 0;
+}
+
+.churn-driver-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+}
+
+.churn-driver-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.churn-driver-rank {
+  width: 22px; height: 22px;
+  background: var(--ink);
+  color: white;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+}
+
+.churn-impact-badge {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  padding: 3px 9px;
+  border-radius: 100px;
+  border: 1px solid;
+}
+
+.impact-critical { background: var(--red-light); color: var(--red); border-color: var(--red-mid); }
+.impact-high     { background: var(--amber-light); color: var(--amber); border-color: var(--amber-mid); }
+.impact-medium   { background: var(--blue-light); color: var(--blue); border-color: var(--blue-mid); }
+
+.churn-driver-body { padding: 16px 18px; }
+
+.churn-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.churn-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.churn-bar-label {
+  font-size: 12px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink2);
+  min-width: 120px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.churn-bar-track {
+  flex: 1;
+  height: 20px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.churn-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding-left: 7px;
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  color: white;
+  font-weight: 500;
+  min-width: 32px;
+  transition: width 1s ease;
+}
+
+.churn-bar-fill.fill-danger { background: var(--red); }
+.churn-bar-fill.fill-warn   { background: #d97706; }
+.churn-bar-fill.fill-ok     { background: var(--teal); }
+
+.churn-bar-pct {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  min-width: 38px;
+  text-align: right;
+}
+
+.churn-driver-insight {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--red-light);
+  border: 1px solid var(--red-mid);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--red);
+  line-height: 1.55;
+}
+
+.churn-driver-reco {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--green-light);
+  border: 1px solid var(--green-mid);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--green);
+  line-height: 1.55;
+}
+
+.churn-driver-reco::before { content: '→ '; font-weight: 700; }
+
+/* Overall churn rate banner */
+.overall-churn-banner {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+
+.ocb-stat { text-align: center; }
+
+.ocb-val {
+  font-family: 'Instrument Serif', serif;
+  font-size: 28px;
+  line-height: 1;
+  display: block;
+  margin-bottom: 3px;
+}
+
+.ocb-label {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.ocb-divider { width: 1px; height: 40px; background: var(--border); flex-shrink: 0; }
+
+.ocb-bar-section { flex: 1; }
+
+.ocb-bar-label {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  margin-bottom: 6px;
+}
+
+.ocb-bar {
+  height: 8px;
+  background: var(--bg3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.ocb-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--red), #dc2626);
+  border-radius: 4px;
+  transition: width 1s ease;
+}
+
+/* ═══════════════════════════════════════════
+   QUERY / CHAT SECTION
+═══════════════════════════════════════════ */
+.icon-query { background: #fdf4ff; }
+
+.query-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 480px;
+}
+
+.query-left {
+  border-right: 1px solid var(--border);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.query-right {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+/* Input area */
+.query-input-wrap {
+  position: relative;
+}
+
+.query-textarea {
+  width: 100%;
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 13px 14px;
+  font-family: 'Geist', sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  resize: none;
+  height: 100px;
+  outline: none;
+  line-height: 1.6;
+  transition: border-color 0.15s;
+}
+
+.query-textarea:focus { border-color: #7c3aed; }
+.query-textarea::placeholder { color: var(--ink4); }
+
+.query-submit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.query-submit-hint {
+  font-size: 11px;
+  color: var(--ink3);
+  font-family: 'Geist Mono', monospace;
+}
+
+.btn-query {
+  background: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 10px 20px;
+  font-family: 'Geist', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.btn-query:hover:not(:disabled) {
+  background: #6d28d9;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(124,58,237,0.25);
+}
+
+.btn-query:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+.btn-query .q-spinner {
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: none;
+}
+
+.btn-query.loading .q-spinner { display: block; }
+.btn-query.loading .q-label   { opacity: 0.7; }
+
+/* Example query chips */
+.query-examples-label {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+
+.query-example-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.q-chip {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 9px 12px;
+  font-size: 12px;
+  color: var(--ink2);
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  transition: all 0.15s;
+  font-family: 'Geist', sans-serif;
+}
+
+.q-chip:hover {
+  background: #fdf4ff;
+  border-color: #c4b5fd;
+  color: #5b21b6;
+}
+
+/* Chat messages */
+.chat-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 10px;
+  color: var(--ink3);
+  padding: 32px;
+}
+
+.chat-empty-icon { font-size: 28px; opacity: 0.4; }
+.chat-empty-text { font-size: 13px; line-height: 1.6; max-width: 260px; }
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.chat-msg {
+  animation: fadeUp 0.3s ease forwards;
+  opacity: 0;
+}
+
+/* User bubble */
+.chat-msg-user {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.user-bubble {
+  background: var(--ink);
+  color: white;
+  padding: 11px 15px;
+  border-radius: 12px 12px 3px 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  max-width: 85%;
+}
+
+/* Agent bubble */
+.chat-msg-agent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.agent-avatar {
+  width: 28px; height: 28px;
+  background: #7c3aed;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.agent-bubble {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 3px 12px 12px 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink2);
+  flex: 1;
+  box-shadow: var(--shadow-sm);
+}
+
+.agent-bubble strong { color: var(--ink); font-weight: 600; }
+
+.agent-bubble .answer-section {
+  margin-bottom: 12px;
+}
+
+.agent-bubble .answer-section:last-child { margin-bottom: 0; }
+
+.answer-label {
+  font-size: 10px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 5px;
+}
+
+.answer-text { font-size: 13px; color: var(--ink2); line-height: 1.65; }
+
+.answer-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.answer-metric-pill {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: 'Geist Mono', monospace;
+}
+
+.amp-val { font-size: 15px; color: var(--ink); font-weight: 500; display: block; line-height: 1; }
+.amp-lbl { font-size: 10px; color: var(--ink3); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.answer-insight {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: #fdf4ff;
+  border: 1px solid #c4b5fd;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #5b21b6;
+  line-height: 1.55;
+}
+
+.answer-action {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: var(--green-light);
+  border: 1px solid var(--green-mid);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--green);
+  line-height: 1.55;
+}
+
+.answer-action::before { content: '→ '; font-weight: 600; }
+
+/* Thinking animation */
+.thinking-bubble {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 3px 12px 12px 12px;
+  padding: 14px 16px;
+  font-size: 13px;
+  color: var(--ink3);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thinking-dots span {
+  display: inline-block;
+  width: 5px; height: 5px;
+  background: var(--ink4);
+  border-radius: 50%;
+  animation: dotBounce 1.2s infinite;
+}
+
+.thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+  0%, 60%, 100% { transform: translateY(0); }
+  30%           { transform: translateY(-4px); }
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.query-history-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.query-history-label {
+  font-size: 11px;
+  font-family: 'Geist Mono', monospace;
+  color: var(--ink3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.btn-clear-chat {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: var(--ink3);
+  cursor: pointer;
+  font-family: 'Geist Mono', monospace;
+  transition: all 0.15s;
+}
+
+.btn-clear-chat:hover { color: var(--red); border-color: var(--red-mid); }
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
+@media (max-width: 800px) {
+  .topbar { padding: 0 16px; }
+  .app-container { padding: 20px 16px 60px; }
+  .summary-kpis { grid-template-columns: repeat(3, 1fr); }
+  .charts-grid  { grid-template-columns: 1fr; }
+  .reco-grid    { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
 
-<div class="grid-bg"></div>
-
-<!-- NAV -->
-<nav>
-  <span class="nav-logo">EDA Agent</span>
-  <ul class="nav-links">
-    <li><a href="#architecture">Architecture</a></li>
-    <li><a href="#process">Process</a></li>
-    <li><a href="#demo">Demo</a></li>
-    <li><a href="#data">Data</a></li>
-    <li><a href="#kpis">KPIs</a></li>
-  </ul>
-  <span class="nav-badge">v1.0 · SaaS</span>
-</nav>
-
-<!-- HERO -->
-<section class="hero" id="home">
-  <div class="glow-blob blob1"></div>
-  <div class="glow-blob blob2"></div>
-  <div class="hero-inner">
-    <div class="hero-eyebrow">Exploratory Data Analysis Agent</div>
-    <h1 class="hero-title">
-      From Raw Data<br>
-      <span class="line2">to Product</span><br>
-      <span class="accent-word">Decisions</span>
-    </h1>
-    <p class="hero-desc">
-      An autonomous multi-agent framework that helps product managers generate hypotheses,
-      validate them against real metrics, segment users by behavior, and prescribe
-      data-driven product strategies — in minutes, not weeks.
-    </p>
-    <div class="hero-ctas">
-      <a href="#demo" class="btn-primary">Run a Demo ↓</a>
-      <a href="#architecture" class="btn-ghost">View Architecture</a>
+<!-- ═══════════════ TOPBAR ═══════════════ -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 14 14"><circle cx="3" cy="3" r="1.5"/><circle cx="11" cy="3" r="1.5"/><circle cx="3" cy="11" r="1.5"/><circle cx="11" cy="11" r="1.5"/><line x1="3" y1="3" x2="11" y2="11" stroke-width="1"/><line x1="11" y1="3" x2="3" y2="11" stroke-width="1"/></svg>
     </div>
-    <div class="hero-stats">
-      <div class="stat-item">
-        <span class="stat-num">4<span>×</span></span>
-        <span class="stat-label">Agents Collaborating</span>
+    <span class="brand-name">Product Intelligence Agent</span>
+    <div class="brand-divider"></div>
+    <span class="brand-sub">Automated EDA · No backend required</span>
+  </div>
+  <div class="topbar-right">
+    <span class="chip chip-neutral" id="statusChip">No data loaded</span>
+    <span class="chip chip-blue">Client-side only</span>
+  </div>
+</header>
+
+<!-- ═══════════════ MAIN ═══════════════ -->
+<main class="app-container">
+
+  <!-- Progress bar -->
+  <div class="progress-bar-wrap" id="progressWrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <!-- ── 1. UPLOAD ── -->
+  <div class="section" id="sectionUpload">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-upload">📁</div>
+        <span class="section-label">Upload Dataset</span>
       </div>
-      <div class="stat-item">
-        <span class="stat-num">~<span>3</span>m</span>
-        <span class="stat-label">Time to Insight</span>
+      <span class="section-meta">CSV files only · Parsed entirely in browser</span>
+    </div>
+    <div class="section-body">
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" id="fileInput" accept=".csv" onchange="handleFileSelect(event)"/>
+        <div class="upload-glyph">📊</div>
+        <div class="upload-title">Drag & drop your CSV dataset</div>
+        <div class="upload-sub"><span>Browse file</span> or drop it here</div>
+        <div class="upload-formats">
+          <span class="format-tag">.csv</span>
+          <span class="format-tag">UTF-8</span>
+          <span class="format-tag">Headers required</span>
+          <span class="format-tag">No size limit</span>
+        </div>
       </div>
-      <div class="stat-item">
-        <span class="stat-num">100<span>%</span></span>
-        <span class="stat-label">Autonomous Workflow</span>
-      </div>
-      <div class="stat-item">
-        <span class="stat-num">∞</span>
-        <span class="stat-label">Hypothesis Space</span>
+      <div class="file-bar" id="fileBar">
+        <div class="file-bar-icon">✓</div>
+        <div class="file-bar-info">
+          <div class="file-bar-name" id="fileBarName">—</div>
+          <div class="file-bar-meta" id="fileBarMeta">—</div>
+        </div>
+        <button class="btn-reset" onclick="resetAll()">Remove file</button>
       </div>
     </div>
   </div>
-</section>
 
-<!-- ARCHITECTURE -->
-<section id="architecture">
-  <div class="section-inner">
-    <div class="section-label">System Design</div>
-    <h2 class="section-title">Multi-Agent Architecture</h2>
-    <p class="section-sub">Four specialized agents with distinct roles, operating as a coordinated intelligence layer over your SaaS data.</p>
-
-    <div class="arch-grid">
-      <div class="arch-card orchestrator">
-        <div class="arch-icon">🎯</div>
-        <div class="arch-card-tag">orchestrator.py</div>
-        <div class="arch-card-title">Orchestrator Agent</div>
-        <div class="arch-card-desc">The conductor. Initiates analysis, manages the overall workflow, coordinates between agents, and synthesizes the final report with executive-ready recommendations.</div>
-        <div class="arch-tools">
-          <span class="tool-tag">WorkflowManager</span>
-          <span class="tool-tag">ReportCompiler</span>
-          <span class="tool-tag">AgentRouter</span>
-          <span class="tool-tag">StateTracker</span>
-        </div>
+  <!-- ── 0. PRODUCT INTELLIGENCE SUMMARY ── -->
+  <div class="section hidden" id="sectionIntel">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon" style="background:linear-gradient(135deg,#1e3a5f,#0f766e);display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:7px;width:28px;height:28px;">🧠</div>
+        <span class="section-label">Product Intelligence Summary</span>
       </div>
-
-      <div class="arch-card data-eng">
-        <div class="arch-icon">⚙️</div>
-        <div class="arch-card-tag">agents.py · data_engineer</div>
-        <div class="arch-card-title">Data Engineer Agent</div>
-        <div class="arch-card-desc">The SQL workhorse. Responsible for all data interactions — exploring schemas, executing queries, autonomously debugging errors, and returning clean datasets.</div>
-        <div class="arch-tools">
-          <span class="tool-tag">GetDistinctValues</span>
-          <span class="tool-tag">ExecuteSQL</span>
-          <span class="tool-tag">CorrectSQL</span>
-          <span class="tool-tag">SchemaExplorer</span>
-        </div>
-      </div>
-
-      <div class="arch-card analyst">
-        <div class="arch-icon">🧠</div>
-        <div class="arch-card-tag">agents.py · principal_analyst</div>
-        <div class="arch-card-title">Principal Analyst Agent</div>
-        <div class="arch-card-desc">The brains. Receives clean data, synthesizes behavioral signals, performs deep-dive analysis, identifies anomalies, and generates the actionable prescription layer.</div>
-        <div class="arch-tools">
-          <span class="tool-tag">BehaviorSynthesizer</span>
-          <span class="tool-tag">AnomalyDetector</span>
-          <span class="tool-tag">PrescriptionEngine</span>
-          <span class="tool-tag">NarrativeBuilder</span>
-        </div>
-      </div>
-
-      <div class="arch-card hypothesis">
-        <div class="arch-icon">🔍</div>
-        <div class="arch-card-tag">workflow.py · hypothesis_engine</div>
-        <div class="arch-card-title">Hypothesis Discovery Engine</div>
-        <div class="arch-card-desc">The explorer. Uses Beam Search to intelligently navigate the hypothesis space — seeding broad ideas, pruning weak paths, and drilling down into high-signal cohorts autonomously.</div>
-        <div class="arch-tools">
-          <span class="tool-tag">BeamSearch</span>
-          <span class="tool-tag">HypothesisValidator</span>
-          <span class="tool-tag">CohortScorer</span>
-          <span class="tool-tag">PathPruner</span>
-        </div>
-      </div>
+      <span class="section-meta" id="intelMeta">Auto-generated from your data</span>
+    </div>
+    <div class="section-body">
+      <div class="intel-grid" id="intelGrid"></div>
+      <div class="intel-narrative" id="intelNarrative" style="margin-top:0"></div>
     </div>
   </div>
-</section>
 
-<!-- BEAM SEARCH VIZ -->
-<section style="padding-top: 0;">
-  <div class="section-inner">
-    <div class="section-label">Hypothesis Engine</div>
-    <h2 class="section-title">Beam Search in Action</h2>
-    <p class="section-sub">The engine doesn't guess randomly. It starts broad, scores each hypothesis against data, keeps the strongest "beams," and focuses exploration where signal is highest.</p>
-
-    <div class="beam-container">
-      <div class="beam-title">Hypothesis Tree — Churn Driver Discovery</div>
-      <div class="beam-tree">
-        <div class="beam-level">
-          <div class="beam-level-label">Seed</div>
-          <div class="beam-node active">
-            All Users<br>
-            <div class="beam-score">baseline churn: 3.1%</div>
-          </div>
-        </div>
-
-        <div class="beam-level">
-          <div class="beam-level-label">Iteration 1</div>
-          <div class="beam-node active">
-            Tenure &lt; 90d<br>
-            <div class="beam-score">churn: 6.2% ↑↑</div>
-          </div>
-          <div class="beam-node pruned">
-            Plan = Free<br>
-            <div class="beam-score">churn: 3.4% ~</div>
-          </div>
-          <div class="beam-node pruned">
-            Region = EU<br>
-            <div class="beam-score">churn: 3.0% ~</div>
-          </div>
-        </div>
-
-        <div class="beam-level">
-          <div class="beam-level-label">Iteration 2</div>
-          <div class="beam-node active">
-            Tenure &lt; 90d<br>+ No Onboarding<br>
-            <div class="beam-score">churn: 9.1% ↑↑↑</div>
-          </div>
-          <div class="beam-node pruned">
-            Tenure &lt; 90d<br>+ Plan = Team<br>
-            <div class="beam-score">churn: 5.8% ↑</div>
-          </div>
-        </div>
-
-        <div class="beam-level">
-          <div class="beam-level-label">Iteration 3</div>
-          <div class="beam-node winner">
-            Tenure &lt; 90d<br>+ No Onboarding<br>+ 0 Integrations<br>
-            <div class="beam-score">churn: 14.7% 🎯</div>
-          </div>
-          <div class="beam-node pruned">
-            Tenure &lt; 90d<br>+ No Onboarding<br>+ Mobile Only<br>
-            <div class="beam-score">churn: 7.2% ↑</div>
-          </div>
-        </div>
+  <!-- ── 1b. CHURN DRIVER ANALYSIS ── -->
+  <div class="section hidden" id="sectionChurn">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-churn">📉</div>
+        <span class="section-label">Churn Driver Analysis</span>
       </div>
+      <span class="section-meta" id="churnMeta">Automatic detection of churn-associated variables</span>
+    </div>
+    <div class="section-body" id="churnBody"></div>
+  </div>
+
+  <!-- ── 2. SUMMARY ── -->
+  <div class="section hidden" id="sectionSummary">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-summary">📋</div>
+        <span class="section-label">Dataset Summary</span>
+      </div>
+      <span class="section-meta" id="summaryMeta">—</span>
+    </div>
+    <div class="section-body">
+      <!-- KPIs -->
+      <div class="summary-kpis" id="summaryKpis"></div>
+      <!-- Column table -->
+      <div class="col-table-wrap">
+        <table class="col-table" id="colTable">
+          <thead>
+            <tr>
+              <th>Column</th>
+              <th>Type</th>
+              <th>Missing</th>
+              <th>Unique Values</th>
+              <th>Sample Values</th>
+            </tr>
+          </thead>
+          <tbody id="colTableBody"></tbody>
+        </table>
+      </div>
+      <!-- Stats -->
+      <div class="stats-grid" id="statsGrid"></div>
     </div>
   </div>
-</section>
 
-<!-- PROCESS -->
-<section id="process">
-  <div class="section-inner">
-    <div class="section-label">End-to-End Workflow</div>
-    <h2 class="section-title">How the Agent Works</h2>
-    <p class="section-sub">From a PM's question to a specific, validated prescription — completely autonomous.</p>
-
-    <div class="flow-steps">
-      <div class="flow-step" data-step="1">
-        <div class="step-num">01</div>
-        <div class="step-content">
-          <div class="step-label">Initiation</div>
-          <div class="step-title">PM Submits a Business Question</div>
-          <div class="step-desc">The PM inputs a high-level product concern — churn spikes, activation drops, expansion bottlenecks. The Orchestrator parses intent and initializes the agent workflow.</div>
-          <div class="step-example">INPUT → "Why are new users on our Pro plan churning at 2x the rate of Team plan users in month 1?"</div>
-        </div>
+  <!-- ── 3. CHARTS ── -->
+  <div class="section hidden" id="sectionCharts">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-charts">📈</div>
+        <span class="section-label">Charts & Distributions</span>
       </div>
+      <span class="section-meta" id="chartsMeta">—</span>
+    </div>
+    <div class="section-body">
+      <div class="charts-grid" id="chartsGrid"></div>
+      <div class="heatmap-section" id="heatmapSection"></div>
+    </div>
+  </div>
 
-      <div class="flow-step" data-step="2">
-        <div class="step-num">02</div>
-        <div class="step-content">
-          <div class="step-label">Diagnosis</div>
-          <div class="step-title">Hypothesis Engine Explores the Data</div>
-          <div class="step-desc">The Hypothesis Discovery Engine seeds broad cohorts, validates each against live metrics via the Data Engineer Agent, scores signal strength, and prunes low-value paths using Beam Search.</div>
-          <div class="step-example">DISCOVERY → Pro users, Tenure &lt; 30d, zero_integrations_connected = TRUE → churn rate 18.3% vs 4.1% baseline</div>
-        </div>
+  <!-- ── 4. COHORT ── -->
+  <div class="section hidden" id="sectionCohort">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-cohort">👥</div>
+        <span class="section-label">Cohort Analysis</span>
       </div>
-
-      <div class="flow-step" data-step="3">
-        <div class="step-num">03</div>
-        <div class="step-content">
-          <div class="step-label">Deep Dive</div>
-          <div class="step-title">Principal Analyst Synthesizes Signals</div>
-          <div class="step-desc">The analyst agent enriches the high-signal cohort with behavioral data: session patterns, feature adoption, in-app events, support contacts — building a full narrative around the cohort.</div>
-          <div class="step-example">SIGNAL → Cohort averages 1.2 sessions in week 1 (vs 6.8 for retained). 0% used core value feature. 40% opened no emails.</div>
+      <span class="section-meta">Compare metrics across user segments</span>
+    </div>
+    <div class="section-body">
+      <div class="cohort-controls">
+        <div class="control-group">
+          <span class="control-label">Group By (Category)</span>
+          <select class="control-select" id="cohortGroupBy"></select>
         </div>
+        <div class="control-group">
+          <span class="control-label">Measure (Numeric)</span>
+          <select class="control-select" id="cohortMetric"></select>
+        </div>
+        <div class="control-group">
+          <span class="control-label">Chart Type</span>
+          <select class="control-select" id="cohortChartType">
+            <option value="bar">Bar Chart</option>
+            <option value="horizontalBar">Horizontal Bar</option>
+          </select>
+        </div>
+        <button class="btn-analyse" onclick="runCohortAnalysis()">
+          ▶ Run Analysis
+        </button>
       </div>
-
-      <div class="flow-step" data-step="4">
-        <div class="step-num">04</div>
-        <div class="step-content">
-          <div class="step-label">Prescription</div>
-          <div class="step-title">Actionable Strategy Generated</div>
-          <div class="step-desc">The Orchestrator compiles findings into a final report with specific, prioritized product and go-to-market recommendations tied directly to the validated cohort data.</div>
-          <div class="step-example">PRESCRIPTION → Launch targeted onboarding flow for Pro users with zero integrations at day 3. Predicted churn reduction: ~40%.</div>
+      <div class="cohort-results" id="cohortResults">
+        <div class="cohort-chart-wrap">
+          <canvas id="cohortChart"></canvas>
+        </div>
+        <div class="cohort-table-wrap">
+          <table class="cohort-table" id="cohortTable">
+            <thead>
+              <tr>
+                <th>Cohort</th>
+                <th>Count</th>
+                <th>Mean</th>
+                <th>Min</th>
+                <th>Max</th>
+                <th>vs. Overall Mean</th>
+              </tr>
+            </thead>
+            <tbody id="cohortTableBody"></tbody>
+          </table>
         </div>
       </div>
     </div>
   </div>
-</section>
 
-<!-- DEMO -->
-<section id="demo">
-  <div class="section-inner">
-    <div class="section-label">Interactive Demo</div>
-    <h2 class="section-title">Try the Agent</h2>
-    <p class="section-sub">Ask a product question and see simulated multi-agent analysis — hypotheses, metrics, segments, and prescriptions.</p>
-
-    <div class="demo-container">
-      <div class="demo-header">
-        <div class="demo-title-bar">
-          <div class="dot dot-r"></div>
-          <div class="dot dot-y"></div>
-          <div class="dot dot-g"></div>
-          <span class="demo-label">eda-agent · interactive session</span>
-        </div>
-        <div class="demo-status">
-          <div class="status-dot"></div>
-          AGENT READY
-        </div>
+  <!-- ── 5. HYPOTHESES ── -->
+  <div class="section hidden" id="sectionHyp">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-insight">🔬</div>
+        <span class="section-label">Generated Hypotheses</span>
       </div>
-
-      <div class="demo-body">
-        <div class="demo-left">
-          <div class="input-label">Product Question</div>
-          <textarea class="demo-textarea" id="queryInput" placeholder="e.g. Why are trial users not converting to paid plans?">Why are users on our Pro plan churning significantly more than Team plan users in their first 30 days?</textarea>
-
-          <div class="demo-selects">
-            <div>
-              <div class="input-label" style="margin-top:0">Focus Area</div>
-              <select class="demo-select" id="focusSelect">
-                <option value="churn">Churn Analysis</option>
-                <option value="activation">Activation</option>
-                <option value="expansion">Expansion</option>
-                <option value="engagement">Engagement</option>
-              </select>
-            </div>
-            <div>
-              <div class="input-label" style="margin-top:0">Time Window</div>
-              <select class="demo-select" id="windowSelect">
-                <option value="30d">Last 30 Days</option>
-                <option value="90d">Last 90 Days</option>
-                <option value="12m">Last 12 Months</option>
-              </select>
-            </div>
-          </div>
-
-          <button class="run-btn" onclick="runAgent()" id="runBtn">▶ Run Agent Analysis</button>
-
-          <div id="loadingBar" style="display:none; margin-top:2px;">
-            <div class="loading-bar"></div>
-          </div>
-
-          <div id="thinkingMsg" style="display:none; margin-top:16px; font-family: 'DM Mono', monospace; font-size:12px; color: var(--muted);">
-            Agent thinking<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>
-          </div>
-        </div>
-
-        <div class="demo-right">
-          <div class="output-tabs">
-            <button class="tab-btn active" onclick="switchTab('hypotheses', this)">Hypotheses</button>
-            <button class="tab-btn" onclick="switchTab('metrics', this)">Metrics</button>
-            <button class="tab-btn" onclick="switchTab('segments', this)">Segments</button>
-            <button class="tab-btn" onclick="switchTab('prescription', this)">Prescription</button>
-          </div>
-
-          <!-- HYPOTHESES -->
-          <div class="output-panel active" id="panel-hypotheses">
-            <div class="output-empty" id="empty-hypotheses">
-              <div class="output-empty-icon">⟳</div>
-              Run the agent to generate hypotheses
-            </div>
-            <div id="hyp-results" style="display:none; display:none; flex-direction:column; gap:10px;"></div>
-          </div>
-
-          <!-- METRICS -->
-          <div class="output-panel" id="panel-metrics">
-            <div class="output-empty" id="empty-metrics">
-              <div class="output-empty-icon">📊</div>
-              Run the agent to validate metrics
-            </div>
-            <div id="met-results" style="display:none;"></div>
-          </div>
-
-          <!-- SEGMENTS -->
-          <div class="output-panel" id="panel-segments">
-            <div class="output-empty" id="empty-segments">
-              <div class="output-empty-icon">👥</div>
-              Run the agent to segment users
-            </div>
-            <div id="seg-results" style="display:none;"></div>
-          </div>
-
-          <!-- PRESCRIPTION -->
-          <div class="output-panel" id="panel-prescription">
-            <div class="output-empty" id="empty-prescription">
-              <div class="output-empty-icon">💊</div>
-              Run the agent to get prescriptions
-            </div>
-            <div id="rx-results" style="display:none;"></div>
-          </div>
-        </div>
-      </div>
+      <span class="section-meta" id="hypMeta">—</span>
+    </div>
+    <div class="section-body">
+      <div class="hyp-grid" id="hypGrid"></div>
     </div>
   </div>
-</section>
 
-<!-- DATA INPUTS -->
-<section id="data">
-  <div class="section-inner">
-    <div class="section-label">Data Layer</div>
-    <h2 class="section-title">Data Inputs & Sources</h2>
-    <p class="section-sub">The agent ingests structured data from six source categories, building a comprehensive picture of user behavior and product health.</p>
-
-    <div class="data-grid">
-      <div class="data-card">
-        <div class="data-card-icon">👤</div>
-        <div class="data-card-name">User Profile Data</div>
-        <div class="data-card-desc">Core identity, subscription plan, tenure, seat count, billing status, contract type, and account tier.</div>
-        <div class="data-card-meta">
-          <span class="meta-tag">plan_type</span>
-          <span class="meta-tag">tenure_days</span>
-          <span class="meta-tag">seat_count</span>
-          <span class="meta-tag">contract_status</span>
-        </div>
+  <!-- ── 6. INSIGHTS ── -->
+  <div class="section hidden" id="sectionInsights">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-insight">💡</div>
+        <span class="section-label">Generated Insights</span>
       </div>
-
-      <div class="data-card">
-        <div class="data-card-icon">⚡</div>
-        <div class="data-card-name">Product Behavior</div>
-        <div class="data-card-desc">Session frequency, feature adoption, core value action completions, API usage, integrations connected.</div>
-        <div class="data-card-meta">
-          <span class="meta-tag">dau_wau_ratio</span>
-          <span class="meta-tag">features_used</span>
-          <span class="meta-tag">integrations_count</span>
-          <span class="meta-tag">api_calls</span>
-        </div>
-      </div>
-
-      <div class="data-card">
-        <div class="data-card-icon">🤖</div>
-        <div class="data-card-name">ML Model Scores</div>
-        <div class="data-card-desc">Real-time and batch churn propensity scores, expansion likelihood, health scores, and LTV predictions.</div>
-        <div class="data-card-meta">
-          <span class="meta-tag">churn_score_rt</span>
-          <span class="meta-tag">churn_score_weekly</span>
-          <span class="meta-tag">health_score</span>
-          <span class="meta-tag">ltv_predicted</span>
-        </div>
-      </div>
-
-      <div class="data-card">
-        <div class="data-card-icon">💬</div>
-        <div class="data-card-name">Conversational Intelligence</div>
-        <div class="data-card-desc">Support ticket summaries, NPS verbatims, in-app chat transcripts, and sentiment extracted via NLP.</div>
-        <div class="data-card-meta">
-          <span class="meta-tag">sentiment_score</span>
-          <span class="meta-tag">complaint_categories</span>
-          <span class="meta-tag">nps_verbatim</span>
-          <span class="meta-tag">ticket_volume</span>
-        </div>
-      </div>
-
-      <div class="data-card">
-        <div class="data-card-icon">🔍</div>
-        <div class="data-card-name">XAI / Explainable AI</div>
-        <div class="data-card-desc">Feature importance outputs from churn and health models — weekly D8-10 insights identifying top churn drivers per segment.</div>
-        <div class="data-card-meta">
-          <span class="meta-tag">feature_importance</span>
-          <span class="meta-tag">shap_values</span>
-          <span class="meta-tag">driver_ranking</span>
-          <span class="meta-tag">d8_insights</span>
-        </div>
-      </div>
-
-      <div class="data-card">
-        <div class="data-card-icon">🌐</div>
-        <div class="data-card-name">Competitive & Market</div>
-        <div class="data-card-desc">Competitor pricing changes, feature gap analysis, market segment benchmarks, and industry churn norms.</div>
-        <div class="data-card-meta">
-          <span class="meta-tag">competitor_pricing</span>
-          <span class="meta-tag">market_churn_norm</span>
-          <span class="meta-tag">feature_gaps</span>
-          <span class="meta-tag">win_loss_data</span>
-        </div>
-      </div>
+      <span class="section-meta" id="insightsMeta">—</span>
+    </div>
+    <div class="section-body">
+      <div class="insight-list" id="insightList"></div>
     </div>
   </div>
-</section>
 
-<!-- KPIs -->
-<section id="kpis">
-  <div class="section-inner">
-    <div class="section-label">Analytics Layer</div>
-    <h2 class="section-title">Agent KPIs & Tracked Metrics</h2>
-    <p class="section-sub">The metrics the agent monitors, validates against, and surfaces in every analysis run.</p>
-
-    <div class="kpi-grid">
-      <div class="kpi-card">
-        <span class="kpi-icon">📉</span>
-        <div class="kpi-name">Churn Rate</div>
-        <div class="kpi-val" style="color:var(--accent3)">5.2%</div>
-        <div class="kpi-sub">30-day rolling avg</div>
+  <!-- ── 7. RECOMMENDATIONS ── -->
+  <div class="section hidden" id="sectionReco">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-reco">🎯</div>
+        <span class="section-label">Product Recommendations</span>
       </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">🎯</span>
-        <div class="kpi-name">Capture Rate</div>
-        <div class="kpi-val" style="color:var(--accent2)">68%</div>
-        <div class="kpi-sub">High-risk users identified</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">⚡</span>
-        <div class="kpi-name">Activation Rate</div>
-        <div class="kpi-val" style="color:var(--accent4)">41%</div>
-        <div class="kpi-sub">Day 7 core action</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">📈</span>
-        <div class="kpi-name">NRR</div>
-        <div class="kpi-val" style="color:var(--accent)">108%</div>
-        <div class="kpi-sub">Net Revenue Retention</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">💬</span>
-        <div class="kpi-name">Sentiment</div>
-        <div class="kpi-val" style="color:var(--accent2)">+0.62</div>
-        <div class="kpi-sub">Avg Convo IQ score</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">🔌</span>
-        <div class="kpi-name">Integration Adoption</div>
-        <div class="kpi-val" style="color:var(--accent4)">29%</div>
-        <div class="kpi-sub">Users with ≥1 integration</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">🏃</span>
-        <div class="kpi-name">DAU/WAU</div>
-        <div class="kpi-val" style="color:var(--accent)">0.34</div>
-        <div class="kpi-sub">Stickiness ratio</div>
-      </div>
-      <div class="kpi-card">
-        <span class="kpi-icon">🔁</span>
-        <div class="kpi-name">Expansion Rate</div>
-        <div class="kpi-val" style="color:var(--accent3)">12%</div>
-        <div class="kpi-sub">Seat / plan upgrades MoM</div>
-      </div>
+      <span class="section-meta" id="recoMeta">Prioritised action items</span>
+    </div>
+    <div class="section-body">
+      <div class="reco-grid" id="recoGrid"></div>
     </div>
   </div>
-</section>
 
-<!-- FOOTER -->
-<footer>
-  <span class="footer-logo">EDA Agent</span>
-  <ul class="footer-links">
-    <li><a href="#architecture">Architecture</a></li>
-    <li><a href="#demo">Demo</a></li>
-    <li><a href="https://github.com" target="_blank">GitHub</a></li>
-  </ul>
-  <span class="footer-copy">Built for PM intelligence · SaaS Framework</span>
-</footer>
+  <!-- ── 8. QUERY AGENT ── -->
+  <div class="section hidden" id="sectionQuery">
+    <div class="section-header">
+      <div class="section-title">
+        <div class="section-icon icon-query">🤖</div>
+        <span class="section-label">Ask the Agent</span>
+      </div>
+      <span class="section-meta">Ask questions about your data in plain English · Powered by Claude</span>
+    </div>
+    <div class="query-layout">
 
+      <!-- Left: input + examples -->
+      <div class="query-left">
+        <div>
+          <textarea class="query-textarea" id="queryInput"
+            placeholder="e.g. Which plan type has the highest churn rate?&#10;What's the average sessions_week1 for churned vs retained users?&#10;Which region shows the most at-risk users?"></textarea>
+          <div class="query-submit-row" style="margin-top:10px;">
+            <span class="query-submit-hint">Shift+Enter for new line · Enter to send</span>
+            <button class="btn-query" id="queryBtn" onclick="submitQuery()">
+              <div class="q-spinner"></div>
+              <span class="q-label">✦ Ask Agent</span>
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <div class="query-examples-label">Try these questions</div>
+          <div class="query-example-chips" id="queryExampleChips"></div>
+        </div>
+      </div>
+
+      <!-- Right: chat history -->
+      <div class="query-right" id="queryRight">
+        <div class="chat-empty" id="chatEmpty">
+          <div class="chat-empty-icon">💬</div>
+          <div class="chat-empty-text">Ask any question about your data. The agent reads your actual CSV to answer.</div>
+        </div>
+        <div style="display:none;" id="chatPanel">
+          <div class="query-history-bar">
+            <span class="query-history-label">Conversation</span>
+            <button class="btn-clear-chat" onclick="clearChat()">Clear</button>
+          </div>
+          <div class="chat-messages" id="chatMessages"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════ JAVASCRIPT ═══════════════ -->
 <script>
-  // Scroll animation for flow steps
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if (e.isIntersecting) e.target.classList.add('visible');
-    });
-  }, { threshold: 0.2 });
+/* ════════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════════ */
+let STATE = {
+  rawData:      [],   // array of row objects from PapaParse
+  headers:      [],   // column names
+  columnMeta:   {},   // { colName: { type, nullCount, unique, samples, ... } }
+  numericCols:  [],
+  catCols:      [],
+  fileName:     '',
+  rowCount:     0,
+  chartInstances: {}, // track Chart.js instances for destroy
+};
 
-  document.querySelectorAll('.flow-step').forEach(el => observer.observe(el));
+let cohortChartInstance = null;
 
-  // Tab switching
-  function switchTab(name, btn) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.output-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('panel-' + name).classList.add('active');
+/* ════════════════════════════════════════════════
+   CONSTANTS — chart colour palettes
+════════════════════════════════════════════════ */
+const PALETTE = [
+  '#1d4ed8','#0f766e','#7c3aed','#b45309','#be185d',
+  '#065f46','#1e3a5f','#854d0e','#3b0764','#134e4a',
+];
+
+const PALETTE_ALPHA = (i, a=0.8) => {
+  const hex = PALETTE[i % PALETTE.length];
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+};
+
+/* ════════════════════════════════════════════════
+   FILE HANDLING
+════════════════════════════════════════════════ */
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+// Drag & drop
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) processFile(file);
+  else toast('Please drop a .csv file.');
+});
+
+function processFile(file) {
+  STATE.fileName = file.name;
+  showProgress(10);
+
+  Papa.parse(file, {
+    header: true,
+    skipEmptyLines: true,
+    dynamicTyping: true,
+    complete: (results) => {
+      if (!results.data.length) { toast('CSV appears to be empty.'); return; }
+      showProgress(30);
+      STATE.rawData   = results.data;
+      STATE.headers   = results.meta.fields || [];
+      STATE.rowCount  = results.data.length;
+
+      analyseColumns();
+      showProgress(60);
+
+      renderIntelligenceSummary();
+      renderChurnDrivers();
+      renderSummary();
+      renderCharts();
+      renderHypotheses();
+      renderInsights();
+      renderRecommendations();
+      populateCohortControls();
+
+      showProgress(100);
+      setTimeout(() => hideProgress(), 600);
+
+      // Show file bar
+      document.getElementById('fileBar').classList.add('visible');
+      document.getElementById('fileBarName').textContent = file.name;
+      document.getElementById('fileBarMeta').textContent =
+        `${STATE.rowCount.toLocaleString()} rows · ${STATE.headers.length} columns · ${(file.size/1024).toFixed(1)} KB`;
+
+      // Show all sections
+      ['sectionIntel','sectionChurn','sectionSummary','sectionCharts','sectionCohort','sectionHyp','sectionInsights','sectionReco','sectionQuery']
+        .forEach(id => document.getElementById(id).classList.remove('hidden'));
+      populateQueryExamples();
+
+      document.getElementById('statusChip').textContent = `${STATE.rowCount.toLocaleString()} rows loaded`;
+      document.getElementById('statusChip').className = 'chip chip-green';
+
+      toast(`✓ Loaded ${file.name} — ${STATE.rowCount.toLocaleString()} rows`);
+
+      // Scroll to intel summary
+      setTimeout(() => document.getElementById('sectionIntel').scrollIntoView({ behavior:'smooth', block:'start' }), 200);
+    },
+    error: (err) => { toast('Parse error: ' + err.message); hideProgress(); }
+  });
+}
+
+/* ════════════════════════════════════════════════
+   COLUMN ANALYSIS
+════════════════════════════════════════════════ */
+function analyseColumns() {
+  STATE.columnMeta  = {};
+  STATE.numericCols = [];
+  STATE.catCols     = [];
+
+  STATE.headers.forEach(col => {
+    const vals = STATE.rawData.map(r => r[col]);
+    const nonNull = vals.filter(v => v !== null && v !== undefined && v !== '');
+    const nullCount = vals.length - nonNull.length;
+    const unique = [...new Set(nonNull)];
+
+    // Type detection
+    let type = 'categorical';
+    const numericCount = nonNull.filter(v => typeof v === 'number' && !isNaN(v)).length;
+    const boolVals = nonNull.map(v => String(v).toLowerCase());
+    const isBinary = unique.length <= 2 && ['yes','no','true','false','0','1','y','n'].some(b => boolVals.includes(b));
+    const isId = /id$/i.test(col) && unique.length === nonNull.length;
+
+    if (isId) {
+      type = 'id';
+    } else if (isBinary) {
+      type = 'binary';
+    } else if (numericCount / Math.max(nonNull.length, 1) > 0.8) {
+      type = 'numeric';
+    }
+
+    const numericVals = type === 'numeric' ? nonNull.filter(v => typeof v === 'number') : [];
+
+    STATE.columnMeta[col] = {
+      type,
+      nullCount,
+      nullPct: (nullCount / vals.length * 100).toFixed(1),
+      unique: unique.length,
+      samples: unique.slice(0, 5).map(v => String(v).substring(0, 20)),
+      numericVals,
+      mean:   type === 'numeric' ? mean(numericVals) : null,
+      median: type === 'numeric' ? median(numericVals) : null,
+      min:    type === 'numeric' ? Math.min(...numericVals) : null,
+      max:    type === 'numeric' ? Math.max(...numericVals) : null,
+      stdDev: type === 'numeric' ? stdDev(numericVals) : null,
+    };
+
+    if (type === 'numeric') STATE.numericCols.push(col);
+    else if (type === 'categorical' || type === 'binary') STATE.catCols.push(col);
+  });
+}
+
+/* ════════════════════════════════════════════════
+   RENDER — SUMMARY
+════════════════════════════════════════════════ */
+function renderSummary() {
+  document.getElementById('summaryMeta').textContent =
+    `${STATE.rowCount.toLocaleString()} rows · ${STATE.headers.length} columns`;
+
+  // KPIs
+  const missingCount = Object.values(STATE.columnMeta).reduce((s,c) => s + c.nullCount, 0);
+  const totalCells   = STATE.rowCount * STATE.headers.length;
+
+  document.getElementById('summaryKpis').innerHTML = `
+    <div class="kpi-cell"><span class="kpi-val">${STATE.rowCount.toLocaleString()}</span><span class="kpi-label">Total Rows</span></div>
+    <div class="kpi-cell"><span class="kpi-val">${STATE.headers.length}</span><span class="kpi-label">Columns</span></div>
+    <div class="kpi-cell"><span class="kpi-val">${STATE.numericCols.length}</span><span class="kpi-label">Numeric Cols</span></div>
+    <div class="kpi-cell"><span class="kpi-val">${STATE.catCols.length}</span><span class="kpi-label">Category Cols</span></div>
+    <div class="kpi-cell"><span class="kpi-val">${(missingCount/totalCells*100).toFixed(1)}%</span><span class="kpi-label">Missing Values</span></div>
+  `;
+
+  // Column table
+  const tbody = document.getElementById('colTableBody');
+  tbody.innerHTML = STATE.headers.map(col => {
+    const m = STATE.columnMeta[col];
+    const typeLabel = { numeric:'Numeric', categorical:'Categorical', binary:'Binary', id:'ID' }[m.type];
+    const typeClass = { numeric:'type-numeric', categorical:'type-categorical', binary:'type-binary', id:'type-id' }[m.type];
+    const nullWidth = Math.max(parseFloat(m.nullPct), 0);
+    return `
+      <tr>
+        <td><span class="col-name">${col}</span></td>
+        <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+        <td>
+          <div class="null-bar-wrap">
+            <div class="null-bar"><div class="null-fill" style="width:${nullWidth}%"></div></div>
+            <span class="null-pct">${m.nullPct}%</span>
+          </div>
+        </td>
+        <td>${m.unique.toLocaleString()}</td>
+        <td><span class="sample-vals">${m.samples.join(', ')}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  // Stats cards for numeric cols
+  const statsGrid = document.getElementById('statsGrid');
+  if (STATE.numericCols.length === 0) {
+    statsGrid.innerHTML = '';
+    return;
   }
 
-  // Demo agent simulation
-  const scenarios = {
-    churn: {
-      hypotheses: [
-        { text: "Users with tenure < 30 days and zero integrations connected churn at 14.7% — 4.8x the baseline rate of 3.1%.", confidence: "HIGH", segment: "Early-stage · No integrations", metric: "14.7% churn" },
-        { text: "Pro plan users who never triggered the 'core value action' in week 1 have a 9.2% 30-day churn rate vs. 2.8% for those who did.", confidence: "HIGH", segment: "Pro plan · Week 1 inactive", metric: "9.2% churn" },
-        { text: "Solo users (seat_count = 1) on Pro plans show 2.1x higher churn than team-based Pro accounts, suggesting a plan-fit mismatch.", confidence: "MED", segment: "Solo Pro users", metric: "2.1x churn lift" },
-      ],
-      metrics: [
-        { label: "Cohort Churn Rate", value: "14.7%", delta: "+11.6pp vs baseline", up: true },
-        { label: "Baseline Churn", value: "3.1%", delta: "Control group", up: false },
-        { label: "Cohort Size", value: "2,840", delta: "8.3% of Pro users", up: false },
-        { label: "Revenue at Risk", value: "$112K", delta: "MRR exposed", up: true },
-      ],
-      segments: [
-        { name: "No integrations · <30d", pct: 78 },
-        { name: "Solo Pro · <30d", pct: 62 },
-        { name: "No core action · Week 1", pct: 55 },
-        { name: "0 sessions · Week 2", pct: 41 },
-      ],
-      prescriptions: [
-        { title: "Targeted Onboarding Intervention", desc: "Launch a day-3 in-app prompt for Pro users with 0 integrations, guiding them to connect their first tool. Predicted churn reduction: ~38% for this cohort.", impact: "HIGH IMPACT" },
-        { title: "Pro Plan Fit Audit", desc: "Identify solo users on Pro who haven't used team features. Offer a plan downgrade or personalized success call to reduce friction and improve retention.", impact: "MED IMPACT" },
-        { title: "Core Value Action Gate", desc: "Trigger a success milestone email when users complete their first core value action, reinforcing behavior and improving week-2 retention by creating a habit loop.", impact: "HIGH IMPACT" },
-      ]
+  statsGrid.innerHTML = STATE.numericCols.map(col => {
+    const m = STATE.columnMeta[col];
+    return `
+      <div class="stat-card">
+        <div class="stat-card-name">${col}</div>
+        <div class="stat-nums">
+          <div class="stat-num-item">
+            <span class="stat-num-val">${fmt(m.mean)}</span>
+            <span class="stat-num-label">Mean</span>
+          </div>
+          <div class="stat-num-item">
+            <span class="stat-num-val">${fmt(m.median)}</span>
+            <span class="stat-num-label">Median</span>
+          </div>
+          <div class="stat-num-item">
+            <span class="stat-num-val">${fmt(m.min)}</span>
+            <span class="stat-num-label">Min</span>
+          </div>
+          <div class="stat-num-item">
+            <span class="stat-num-val">${fmt(m.max)}</span>
+            <span class="stat-num-label">Max</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ════════════════════════════════════════════════
+   RENDER — CHARTS
+════════════════════════════════════════════════ */
+function renderCharts() {
+  // Destroy old instances
+  Object.values(STATE.chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+  STATE.chartInstances = {};
+
+  const grid = document.getElementById('chartsGrid');
+  grid.innerHTML = '';
+
+  document.getElementById('chartsMeta').textContent =
+    `${STATE.numericCols.length} distributions · ${STATE.catCols.length} category breakdowns`;
+
+  let cardIdx = 0;
+
+  // Histograms for numeric cols (max 6)
+  STATE.numericCols.slice(0, 6).forEach((col, i) => {
+    const id = `chart_num_${i}`;
+    const card = makeChartCard(col, id, cardIdx++);
+    grid.appendChild(card);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(id).getContext('2d');
+      const vals = STATE.columnMeta[col].numericVals;
+      const { labels, counts } = histogram(vals, 15);
+      STATE.chartInstances[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: col,
+            data: counts,
+            backgroundColor: PALETTE_ALPHA(i, 0.7),
+            borderColor: PALETTE[i % PALETTE.length],
+            borderWidth: 1,
+            borderRadius: 3,
+          }]
+        },
+        options: chartOptions('Distribution', false)
+      });
+      // Inject chart insight
+      const insight = generateChartInsight({ labels, counts, vals, col }, col, 'histogram');
+      const box = document.getElementById(`insight_${id}`);
+      if (box && insight) {
+        box.querySelector('.chart-insight-text').textContent = insight;
+        box.style.display = 'flex';
+      }
+    }, 50);
+  });
+
+  // Bar charts for categorical cols (max 4)
+  STATE.catCols.slice(0, 4).forEach((col, i) => {
+    const id = `chart_cat_${i}`;
+    const card = makeChartCard(col + ' (frequency)', id, cardIdx++);
+    grid.appendChild(card);
+
+    setTimeout(() => {
+      const ctx = document.getElementById(id).getContext('2d');
+      const freq = frequency(STATE.rawData.map(r => r[col]));
+      const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,12);
+      STATE.chartInstances[id] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: sorted.map(([k]) => String(k).substring(0,20)),
+          datasets: [{
+            label: 'Count',
+            data: sorted.map(([,v]) => v),
+            backgroundColor: sorted.map((_,j) => PALETTE_ALPHA(j, 0.75)),
+            borderColor: sorted.map((_,j) => PALETTE[j % PALETTE.length]),
+            borderWidth: 1,
+            borderRadius: 3,
+          }]
+        },
+        options: chartOptions('Frequency', false)
+      });
+      // Inject chart insight
+      const insight = generateChartInsight({ sorted, col }, col, 'categorical');
+      const box = document.getElementById(`insight_${id}`);
+      if (box && insight) {
+        box.querySelector('.chart-insight-text').textContent = insight;
+        box.style.display = 'flex';
+      }
+    }, 50);
+  });
+
+  // Correlation heatmap
+  renderCorrelationHeatmap();
+}
+
+function makeChartCard(title, canvasId, idx) {
+  const div = document.createElement('div');
+  div.className = `chart-card delay-${(idx % 6) + 1}`;
+  div.innerHTML = `
+    <div class="chart-card-title">${title}</div>
+    <div class="chart-canvas-wrap"><canvas id="${canvasId}"></canvas></div>
+    <div class="chart-insight" id="insight_${canvasId}" style="display:none;">
+      <span class="chart-insight-icon">💡</span>
+      <span class="chart-insight-text"></span>
+    </div>
+  `;
+  return div;
+}
+
+function chartOptions(yLabel, legend=true) {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: legend, labels: { font: { family:'Geist Mono', size:10 }, color:'#8c887e' } },
+      tooltip: { titleFont: { family:'Geist Mono', size:11 }, bodyFont: { family:'Geist Mono', size:11 } }
     },
-    activation: {
-      hypotheses: [
-        { text: "Users who don't complete setup within 48 hours of signup have a 61% lower 30-day retention rate.", confidence: "HIGH", segment: "Setup incomplete · 48h", metric: "61% lower retention" },
-        { text: "Accounts invited by an existing user activate at 2.3x the rate of self-signup accounts, suggesting social proof is a strong activation lever.", confidence: "HIGH", segment: "Invite-origin users", metric: "2.3x activation" },
-        { text: "Mobile-only users in week 1 have 40% lower activation than web-primary users, likely due to reduced feature discoverability.", confidence: "MED", segment: "Mobile-only · W1", metric: "40% lower activation" },
-      ],
-      metrics: [
-        { label: "Activation Rate (D7)", value: "41%", delta: "-6pp MoM", up: true },
-        { label: "Time-to-Activate", value: "3.2d", delta: "Median days to first value", up: false },
-        { label: "Invited vs Self-signup", value: "2.3×", delta: "Activation lift", up: false },
-        { label: "Setup Completion", value: "54%", delta: "Within 48 hours", up: true },
-      ],
-      segments: [
-        { name: "Invite-origin · Completed setup", pct: 82 },
-        { name: "Self-signup · Setup complete", pct: 58 },
-        { name: "Self-signup · Incomplete setup", pct: 22 },
-        { name: "Mobile-only · W1", pct: 18 },
-      ],
-      prescriptions: [
-        { title: "48-Hour Setup Nudge", desc: "Send a personalized email + in-app notification at hour 24 for users with incomplete setup. Include a 5-minute quick-start video. Target: 15pp improvement in setup completion.", impact: "HIGH IMPACT" },
-        { title: "Referral Loop Expansion", desc: "Surface in-product invite prompts after key milestones (first core action). Convert self-signup users into invite-origin pathways to boost activation rate.", impact: "MED IMPACT" },
-        { title: "Mobile Onboarding Redesign", desc: "Audit mobile onboarding flow against web. Add progressive disclosure for complex features and mobile-specific tooltips for top 3 activation actions.", impact: "MED IMPACT" },
-      ]
-    },
-    expansion: {
-      hypotheses: [
-        { text: "Accounts with 5+ active users who have not upgraded from Team to Business show a 73% correlation with high feature utilization, suggesting latent upgrade intent.", confidence: "HIGH", segment: "5+ users · Team plan", metric: "73% upgrade signal" },
-        { text: "Accounts using more than 3 integrations expand at 2.8x the rate of single-integration accounts within 6 months.", confidence: "HIGH", segment: "3+ integrations", metric: "2.8x expansion rate" },
-        { text: "Accounts where the admin has viewed the pricing page 2+ times in 30 days but not upgraded show high-intent stall behavior.", confidence: "MED", segment: "Pricing page viewers", metric: "High-intent stall" },
-      ],
-      metrics: [
-        { label: "NRR", value: "108%", delta: "+3pp vs prior quarter", up: false },
-        { label: "Expansion Rate MoM", value: "12%", delta: "Plan + seat upgrades", up: false },
-        { label: "3+ Integrations Lift", value: "2.8×", delta: "Expansion multiplier", up: false },
-        { label: "High-Intent Stall", value: "430", delta: "Accounts at risk", up: true },
-      ],
-      segments: [
-        { name: "5+ users · High feature use", pct: 73 },
-        { name: "3+ integrations connected", pct: 65 },
-        { name: "Pricing page 2+ views", pct: 48 },
-        { name: "Admin usage spike · 30d", pct: 34 },
-      ],
-      prescriptions: [
-        { title: "Proactive High-Intent Outreach", desc: "Flag accounts with pricing page 2+ views and no upgrade in 14 days for a CS reach-out. Offer a 30-min ROI call. Conversion target: 18%.", impact: "HIGH IMPACT" },
-        { title: "Integration-Led Growth Push", desc: "For accounts with 1-2 integrations, surface contextual prompts showing the value of connecting integration #3. Include case study from similar accounts.", impact: "HIGH IMPACT" },
-        { title: "Team Plan Upgrade Trigger", desc: "When seat count hits 4, trigger an in-app banner showing per-seat pricing advantage of Business plan with admin analytics features.", impact: "MED IMPACT" },
-      ]
-    },
-    engagement: {
-      hypotheses: [
-        { text: "Users who receive a personalized weekly digest email have 34% higher DAU/WAU ratios than those who don't, with the effect strongest in months 2–4.", confidence: "HIGH", segment: "Email digest recipients", metric: "34% higher stickiness" },
-        { text: "Accounts with 3+ team members collaborating in the same week retain at 91% over 6 months, compared to 67% for solo-active accounts.", confidence: "HIGH", segment: "Multi-user weekly active", metric: "91% vs 67% retention" },
-        { text: "Feature adoption drops 52% after 30 days for users who never discovered the 'saved views' feature, correlating with reduced daily sessions.", confidence: "MED", segment: "No saved views · 30d", metric: "52% feature drop" },
-      ],
-      metrics: [
-        { label: "DAU/WAU Ratio", value: "0.34", delta: "-0.04 vs benchmark", up: true },
-        { label: "Multi-user Session Rate", value: "38%", delta: "Accounts with collab sessions", up: false },
-        { label: "Email Digest Lift", value: "34%", delta: "Stickiness improvement", up: false },
-        { label: "Feature Discovery Rate", value: "29%", delta: "Core features found by D14", up: true },
-      ],
-      segments: [
-        { name: "Email digest · Active · 2-4mo", pct: 71 },
-        { name: "3+ collab sessions weekly", pct: 65 },
-        { name: "Saved views adopted", pct: 52 },
-        { name: "No email + solo user", pct: 21 },
-      ],
-      prescriptions: [
-        { title: "Personalized Activity Digest", desc: "Expand weekly digest to all users with ML-personalized content showing their team's activity and new feature tips. A/B test subject lines. Expected DAU/WAU lift: +0.06.", impact: "HIGH IMPACT" },
-        { title: "Collaborative Feature Nudge", desc: "At day 10, prompt solo-active users to invite a colleague with a 'better together' message showing collaboration-based retention stats.", impact: "HIGH IMPACT" },
-        { title: "Power Feature Discovery Flow", desc: "Add contextual tooltips at session 5+ surfacing 'saved views' and advanced filters. Gate behind a 'Did you know?' moment tied to their most-used workflow.", impact: "MED IMPACT" },
-      ]
+    scales: {
+      x: { ticks: { font: { family:'Geist Mono', size:9 }, color:'#b8b4ac', maxRotation:45 }, grid: { color:'rgba(0,0,0,0.04)' } },
+      y: { ticks: { font: { family:'Geist Mono', size:9 }, color:'#b8b4ac' }, grid: { color:'rgba(0,0,0,0.04)' }, title: { display: false } }
     }
   };
+}
 
-  function runAgent() {
-    const focus = document.getElementById('focusSelect').value;
-    const btn = document.getElementById('runBtn');
-    btn.disabled = true;
-    btn.textContent = '⟳ Agents Running...';
+/* ════════════════════════════════════════════════
+   CORRELATION HEATMAP
+════════════════════════════════════════════════ */
+function renderCorrelationHeatmap() {
+  const section = document.getElementById('heatmapSection');
+  const cols = STATE.numericCols.slice(0, 10); // cap at 10 for readability
 
-    document.getElementById('loadingBar').style.display = 'block';
-    document.getElementById('thinkingMsg').style.display = 'block';
+  if (cols.length < 2) { section.innerHTML = ''; return; }
 
-    // hide all results
-    ['hypotheses','metrics','segments','prescription'].forEach(k => {
-      document.getElementById('empty-' + k).style.display = 'flex';
-      const r = document.getElementById(k === 'prescription' ? 'rx-results' : k.slice(0,3) + '-results');
-      if (r) r.style.display = 'none';
+  const matrix = {};
+  cols.forEach(a => {
+    matrix[a] = {};
+    cols.forEach(b => {
+      matrix[a][b] = pearson(
+        STATE.rawData.map(r => r[a]),
+        STATE.rawData.map(r => r[b])
+      );
+    });
+  });
+
+  const shortName = s => s.length > 8 ? s.substring(0,7)+'…' : s;
+
+  let html = `
+    <div class="heatmap-section">
+      <div class="heatmap-title">Correlation Matrix (Pearson r) — Numeric Columns</div>
+      <div class="heatmap-scroll">
+        <table class="heatmap-table">
+          <thead>
+            <tr>
+              <th></th>
+              ${cols.map(c => `<th title="${c}">${shortName(c)}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${cols.map(a => `
+              <tr>
+                <th title="${a}">${shortName(a)}</th>
+                ${cols.map(b => {
+                  const r = matrix[a][b];
+                  const intensity = Math.abs(r);
+                  const bg = r > 0
+                    ? `rgba(29,78,216,${intensity * 0.8})`
+                    : `rgba(153,27,27,${intensity * 0.8})`;
+                  const textColor = intensity > 0.5 ? 'white' : '#46433a';
+                  return `<td><div class="hm-cell" style="background:${bg};color:${textColor}">${r.toFixed(2)}</div></td>`;
+                }).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  section.innerHTML = html;
+
+  // Add heatmap insight below
+  if (cols.length >= 2) {
+    const pairs = [];
+    for (let i = 0; i < cols.length; i++) {
+      for (let j = i+1; j < cols.length; j++) {
+        pairs.push({ a: cols[i], b: cols[j], r: matrix[cols[i]][cols[j]] });
+      }
+    }
+    pairs.sort((a,b) => Math.abs(b.r) - Math.abs(a.r));
+    const top = pairs[0];
+    if (top && Math.abs(top.r) > 0.3) {
+      const dir = top.r > 0 ? 'positively' : 'negatively';
+      const strength = Math.abs(top.r) > 0.7 ? 'strongly' : Math.abs(top.r) > 0.5 ? 'moderately' : 'weakly';
+      const insightEl = document.createElement('div');
+      insightEl.className = 'chart-insight';
+      insightEl.style.marginTop = '12px';
+      insightEl.innerHTML = `<span class="chart-insight-icon">💡</span><span class="chart-insight-text">"${top.a}" and "${top.b}" are ${strength} ${dir} correlated (r = ${top.r.toFixed(2)}). ${top.r > 0 ? 'Higher values in one tend to coincide with higher values in the other — consider this relationship when designing product experiments.' : 'As one metric rises, the other tends to fall — monitor these together for trade-off signals.'}</span>`;
+      section.appendChild(insightEl);
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════
+   COHORT ANALYSIS
+════════════════════════════════════════════════ */
+function populateCohortControls() {
+  const groupSel  = document.getElementById('cohortGroupBy');
+  const metricSel = document.getElementById('cohortMetric');
+
+  groupSel.innerHTML  = STATE.catCols.map(c => `<option value="${c}">${c}</option>`).join('');
+  metricSel.innerHTML = STATE.numericCols.map(c => `<option value="${c}">${c}</option>`).join('');
+}
+
+function runCohortAnalysis() {
+  const groupCol  = document.getElementById('cohortGroupBy').value;
+  const metricCol = document.getElementById('cohortMetric').value;
+  const chartType = document.getElementById('cohortChartType').value;
+
+  if (!groupCol || !metricCol) { toast('Select both a category and a metric.'); return; }
+
+  // Group data
+  const groups = {};
+  STATE.rawData.forEach(row => {
+    const key = String(row[groupCol] ?? 'null');
+    const val = parseFloat(row[metricCol]);
+    if (!isNaN(val)) {
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(val);
+    }
+  });
+
+  const sortedKeys = Object.keys(groups).sort((a,b) =>
+    mean(groups[b]) - mean(groups[a])
+  );
+
+  const means   = sortedKeys.map(k => mean(groups[k]));
+  const overall = mean(Object.values(groups).flat());
+
+  // Chart
+  if (cohortChartInstance) { cohortChartInstance.destroy(); cohortChartInstance = null; }
+
+  const ctx = document.getElementById('cohortChart').getContext('2d');
+  const isHoriz = chartType === 'horizontalBar';
+
+  cohortChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sortedKeys.map(k => k.substring(0,20)),
+      datasets: [{
+        label: `Mean ${metricCol}`,
+        data: means.map(v => parseFloat(v.toFixed(3))),
+        backgroundColor: sortedKeys.map((_,i) => PALETTE_ALPHA(i, 0.75)),
+        borderColor: sortedKeys.map((_,i) => PALETTE[i % PALETTE.length]),
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      indexAxis: isHoriz ? 'y' : 'x',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { titleFont: { family:'Geist Mono', size:11 }, bodyFont: { family:'Geist Mono', size:11 } }
+      },
+      scales: {
+        x: { ticks: { font:{ family:'Geist Mono', size:10 }, color:'#b8b4ac' }, grid: { color:'rgba(0,0,0,0.04)' } },
+        y: { ticks: { font:{ family:'Geist Mono', size:10 }, color:'#b8b4ac' }, grid: { color:'rgba(0,0,0,0.04)' } }
+      }
+    }
+  });
+
+  // Table
+  const tbody = document.getElementById('cohortTableBody');
+  tbody.innerHTML = sortedKeys.map(k => {
+    const vals = groups[k];
+    const m    = mean(vals);
+    const diff = ((m - overall) / Math.abs(overall) * 100);
+    const diffStr = diff > 0 ? `+${diff.toFixed(1)}%` : `${diff.toFixed(1)}%`;
+    const diffClass = diff > 5 ? 'delta-positive' : diff < -5 ? 'delta-negative' : 'delta-neutral';
+    return `
+      <tr>
+        <td><strong>${k}</strong></td>
+        <td>${vals.length.toLocaleString()}</td>
+        <td>${fmt(m)}</td>
+        <td>${fmt(Math.min(...vals))}</td>
+        <td>${fmt(Math.max(...vals))}</td>
+        <td><span class="${diffClass}">${diffStr}</span></td>
+      </tr>
+    `;
+  }).join('');
+
+  document.getElementById('cohortResults').classList.add('visible');
+
+  // Inject cohort chart insight
+  const groupMeans = sortedKeys.map(k => ({ k, m: mean(groups[k]) }));
+  const cohortInsightText = generateChartInsight({ groupMeans, metricCol, groupCol, overall }, groupCol, 'cohort');
+  let cohortInsightBox = document.getElementById('cohortInsightBox');
+  if (!cohortInsightBox) {
+    cohortInsightBox = document.createElement('div');
+    cohortInsightBox.id = 'cohortInsightBox';
+    cohortInsightBox.className = 'chart-insight';
+    cohortInsightBox.style.marginTop = '12px';
+    cohortInsightBox.innerHTML = '<span class="chart-insight-icon">💡</span><span class="chart-insight-text"></span>';
+    document.getElementById('cohortResults').appendChild(cohortInsightBox);
+  }
+  if (cohortInsightText) {
+    cohortInsightBox.querySelector('.chart-insight-text').textContent = cohortInsightText;
+    cohortInsightBox.style.display = 'flex';
+  }
+}
+
+/* ════════════════════════════════════════════════
+   HYPOTHESIS GENERATION
+════════════════════════════════════════════════ */
+function renderHypotheses() {
+  const hyps = generateHypotheses();
+  document.getElementById('hypMeta').textContent = `${hyps.length} hypotheses generated`;
+
+  document.getElementById('hypGrid').innerHTML = hyps.map((h, i) => `
+    <div class="hyp-item delay-${Math.min(i+1,6)}">
+      <div class="hyp-num">${i+1}</div>
+      <div class="hyp-content">
+        <div class="hyp-type">${h.type}</div>
+        <div class="hyp-text">${h.text}</div>
+        <div class="hyp-cols">
+          ${h.cols.map(c => `<span class="hyp-col-tag">${c}</span>`).join('')}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function generateHypotheses() {
+  const hyps = [];
+
+  // Correlation hypotheses
+  const numCols = STATE.numericCols;
+  for (let i = 0; i < numCols.length; i++) {
+    for (let j = i+1; j < numCols.length; j++) {
+      const a = numCols[i], b = numCols[j];
+      const r = pearson(STATE.rawData.map(row => row[a]), STATE.rawData.map(row => row[b]));
+      if (Math.abs(r) > 0.4) {
+        const dir = r > 0 ? 'positively' : 'negatively';
+        const strength = Math.abs(r) > 0.7 ? 'strongly' : 'moderately';
+        hyps.push({
+          type: 'Correlation Hypothesis',
+          text: `"${a}" and "${b}" appear ${strength} ${dir} correlated (r = ${r.toFixed(2)}). Changes in one metric may predict changes in the other.`,
+          cols: [a, b]
+        });
+      }
+    }
+  }
+
+  // Categorical vs numeric hypotheses
+  STATE.catCols.slice(0,3).forEach(catCol => {
+    const catMeta = STATE.columnMeta[catCol];
+    if (catMeta.unique < 2 || catMeta.unique > 20) return;
+
+    STATE.numericCols.slice(0,3).forEach(numCol => {
+      const groups = {};
+      STATE.rawData.forEach(row => {
+        const key = String(row[catCol] ?? 'null');
+        const val = parseFloat(row[numCol]);
+        if (!isNaN(val)) {
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(val);
+        }
+      });
+
+      const groupMeans = Object.entries(groups).map(([k,v]) => ({ k, m: mean(v) }));
+      if (groupMeans.length < 2) return;
+
+      groupMeans.sort((a,b) => b.m - a.m);
+      const top = groupMeans[0];
+      const bot = groupMeans[groupMeans.length - 1];
+      const diff = ((top.m - bot.m) / Math.abs(bot.m || 1) * 100).toFixed(0);
+
+      if (Math.abs(parseFloat(diff)) > 15) {
+        hyps.push({
+          type: 'Cohort Performance Hypothesis',
+          text: `Users in the "${top.k}" cohort of "${catCol}" show ${diff}% higher "${numCol}" than "${bot.k}" users (${fmt(top.m)} vs ${fmt(bot.m)}). This segment may warrant a targeted strategy.`,
+          cols: [catCol, numCol]
+        });
+      }
+    });
+  });
+
+  // Missing value hypotheses
+  const highMissingCols = Object.entries(STATE.columnMeta)
+    .filter(([,m]) => parseFloat(m.nullPct) > 10)
+    .map(([col,m]) => ({ col, pct: m.nullPct }));
+
+  highMissingCols.forEach(({ col, pct }) => {
+    hyps.push({
+      type: 'Data Quality Hypothesis',
+      text: `Column "${col}" has ${pct}% missing values. Users with missing "${col}" data may represent a distinct segment — possibly users who skipped a specific step or flow.`,
+      cols: [col]
+    });
+  });
+
+  // High cardinality hypotheses
+  STATE.catCols.forEach(col => {
+    const m = STATE.columnMeta[col];
+    if (m.unique > 5 && m.unique < 20) {
+      hyps.push({
+        type: 'Segmentation Hypothesis',
+        text: `"${col}" has ${m.unique} unique values — a good segmentation dimension. Run a cohort analysis to identify which segment drives the highest impact on key numeric metrics.`,
+        cols: [col]
+      });
+    }
+  });
+
+  // Skewness hypothesis
+  STATE.numericCols.forEach(col => {
+    const m = STATE.columnMeta[col];
+    if (!m.mean || !m.median) return;
+    const skewRatio = Math.abs(m.mean - m.median) / (m.stdDev || 1);
+    if (skewRatio > 0.5) {
+      const dir = m.mean > m.median ? 'right' : 'left';
+      hyps.push({
+        type: 'Distribution Hypothesis',
+        text: `"${col}" is ${dir}-skewed (mean ${fmt(m.mean)}, median ${fmt(m.median)}). A power-user minority may be inflating the mean — consider median-based benchmarks for this metric.`,
+        cols: [col]
+      });
+    }
+  });
+
+  return hyps.slice(0, 12); // Cap at 12
+}
+
+/* ════════════════════════════════════════════════
+   INSIGHT GENERATION
+════════════════════════════════════════════════ */
+function renderInsights() {
+  const insights = generateInsights();
+  document.getElementById('insightsMeta').textContent = `${insights.length} insights found`;
+
+  document.getElementById('insightList').innerHTML = insights.map((ins, i) => `
+    <div class="insight-card insight-${ins.tone} delay-${Math.min(i+1,6)}">
+      <div class="insight-icon">${ins.icon}</div>
+      <div class="insight-body">
+        <div class="insight-title">${ins.title}</div>
+        <div class="insight-detail">${ins.detail}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function generateInsights() {
+  const insights = [];
+
+  // Dataset size insight
+  insights.push({
+    icon: '📊', tone: 'neutral',
+    title: `Dataset contains ${STATE.rowCount.toLocaleString()} records across ${STATE.headers.length} dimensions.`,
+    detail: `${STATE.numericCols.length} numeric columns available for quantitative analysis, ${STATE.catCols.length} categorical columns for segmentation.`
+  });
+
+  // Missing data insight
+  const totalCells   = STATE.rowCount * STATE.headers.length;
+  const missingCells = Object.values(STATE.columnMeta).reduce((s,c) => s + c.nullCount, 0);
+  const missingPct   = (missingCells / totalCells * 100).toFixed(1);
+  if (parseFloat(missingPct) > 5) {
+    insights.push({
+      icon: '⚠️', tone: 'warning',
+      title: `${missingPct}% of data values are missing across all columns.`,
+      detail: `High missing rates can introduce bias in analysis. Review data collection processes for columns with >10% nulls before drawing conclusions.`
+    });
+  }
+
+  // Strong correlations
+  const numCols = STATE.numericCols;
+  const strongCorrs = [];
+  for (let i = 0; i < numCols.length; i++) {
+    for (let j = i+1; j < numCols.length; j++) {
+      const r = pearson(STATE.rawData.map(row => row[numCols[i]]), STATE.rawData.map(row => row[numCols[j]]));
+      if (Math.abs(r) > 0.65) strongCorrs.push({ a: numCols[i], b: numCols[j], r });
+    }
+  }
+  strongCorrs.sort((a,b) => Math.abs(b.r) - Math.abs(a.r)).slice(0,3).forEach(corr => {
+    insights.push({
+      icon: corr.r > 0 ? '📈' : '📉',
+      tone: corr.r > 0 ? 'positive' : 'negative',
+      title: `Strong ${corr.r > 0 ? 'positive' : 'negative'} correlation between "${corr.a}" and "${corr.b}" (r = ${corr.r.toFixed(2)}).`,
+      detail: `This relationship is statistically meaningful. ${corr.r > 0 ? 'Both metrics tend to increase together — improving one may lift the other.' : 'When one metric rises, the other tends to fall — watch for trade-offs in product decisions.'}`
+    });
+  });
+
+  // High variance cols
+  STATE.numericCols.forEach(col => {
+    const m = STATE.columnMeta[col];
+    if (!m.stdDev || !m.mean || m.mean === 0) return;
+    const cv = m.stdDev / Math.abs(m.mean);
+    if (cv > 1.2) {
+      insights.push({
+        icon: '🔀', tone: 'warning',
+        title: `"${col}" shows very high variance (CV = ${cv.toFixed(2)}).`,
+        detail: `This metric varies widely across users. Segmentation analysis is strongly recommended — cohort-level averages will be more meaningful than the overall mean of ${fmt(m.mean)}.`
+      });
+    }
+  });
+
+  // Cohort differences
+  STATE.catCols.slice(0,2).forEach(catCol => {
+    const catMeta = STATE.columnMeta[catCol];
+    if (catMeta.unique < 2 || catMeta.unique > 15) return;
+
+    STATE.numericCols.slice(0,2).forEach(numCol => {
+      const groups = {};
+      STATE.rawData.forEach(row => {
+        const key = String(row[catCol] ?? 'null');
+        const val = parseFloat(row[numCol]);
+        if (!isNaN(val)) {
+          if (!groups[key]) groups[key] = [];
+          groups[key].push(val);
+        }
+      });
+      const groupMeans = Object.entries(groups).map(([k,v]) => ({ k, m: mean(v), n: v.length }));
+      groupMeans.sort((a,b) => b.m - a.m);
+      if (groupMeans.length >= 2) {
+        const top = groupMeans[0], bot = groupMeans[groupMeans.length-1];
+        const diff = Math.abs(top.m - bot.m) / (Math.abs(bot.m) || 1) * 100;
+        if (diff > 20) {
+          insights.push({
+            icon: '👥', tone: diff > 50 ? 'positive' : 'neutral',
+            title: `"${top.k}" users show ${diff.toFixed(0)}% higher "${numCol}" than "${bot.k}" users.`,
+            detail: `"${top.k}" cohort averages ${fmt(top.m)} (n=${top.n}) vs ${fmt(bot.m)} for "${bot.k}" (n=${bot.n}). This gap may represent an actionable opportunity for the underperforming segment.`
+          });
+        }
+      }
+    });
+  });
+
+  // Zero-variance columns
+  STATE.numericCols.forEach(col => {
+    const m = STATE.columnMeta[col];
+    if (m.stdDev !== null && m.stdDev < 0.0001) {
+      insights.push({
+        icon: 'ℹ️', tone: 'neutral',
+        title: `"${col}" has near-zero variance — all values are essentially identical.`,
+        detail: `This column may not provide useful signal for analysis or segmentation. Consider excluding it from models.`
+      });
+    }
+  });
+
+  return insights;
+}
+
+/* ════════════════════════════════════════════════
+   RECOMMENDATIONS
+════════════════════════════════════════════════ */
+function renderRecommendations() {
+  const recos = generateRecommendations();
+  document.getElementById('recoGrid').innerHTML = recos.map((r, i) => `
+    <div class="reco-card priority-${r.priority} delay-${Math.min(i+1,6)}">
+      <div class="reco-header">
+        <div class="reco-title">${r.title}</div>
+        <span class="priority-badge ${r.priority}">${r.priority.toUpperCase()}</span>
+      </div>
+      <div class="reco-desc">${r.desc}</div>
+      <div class="reco-action">${r.action}</div>
+    </div>
+  `).join('');
+}
+
+function generateRecommendations() {
+  const recos = [];
+
+  // Missing data reco
+  const highMissing = Object.entries(STATE.columnMeta)
+    .filter(([,m]) => parseFloat(m.nullPct) > 15)
+    .map(([col]) => col);
+  if (highMissing.length > 0) {
+    recos.push({
+      priority: 'high',
+      title: 'Fix High Missing Value Rate',
+      desc: `Columns [${highMissing.join(', ')}] have >15% missing data, which can distort analysis and model performance.`,
+      action: `Audit data collection pipeline. Consider imputation or removal strategies before any downstream analysis.`
+    });
+  }
+
+  // Cohort investigation
+  STATE.catCols.slice(0,2).forEach(catCol => {
+    const m = STATE.columnMeta[catCol];
+    if (m.unique >= 2 && m.unique <= 10 && STATE.numericCols.length > 0) {
+      recos.push({
+        priority: 'high',
+        title: `Investigate Cohorts in "${catCol}"`,
+        desc: `This column has ${m.unique} segments. Run cohort analysis against key metrics to identify the highest and lowest performing groups.`,
+        action: `Use the Cohort Analysis section above — select "${catCol}" as group and compare against key numeric metrics.`
+      });
+    }
+  });
+
+  // Correlation-based reco
+  const numCols = STATE.numericCols;
+  for (let i = 0; i < numCols.length; i++) {
+    for (let j = i+1; j < numCols.length; j++) {
+      const r = pearson(STATE.rawData.map(row => row[numCols[i]]), STATE.rawData.map(row => row[numCols[j]]));
+      if (Math.abs(r) > 0.7) {
+        recos.push({
+          priority: 'medium',
+          title: `Leverage "${numCols[i]}" ↔ "${numCols[j]}" Correlation`,
+          desc: `Strong correlation (r=${r.toFixed(2)}) means improving "${numCols[i]}" may directly impact "${numCols[j]}". This is a high-leverage intervention point.`,
+          action: `Design an experiment targeting "${r > 0 ? numCols[i] : numCols[j]}" to measure downstream impact on the correlated metric.`
+        });
+        break;
+      }
+    }
+  }
+
+  // Onboarding / engagement
+  const onboardingCols = STATE.headers.filter(h => /onboard|setup|complet/i.test(h));
+  if (onboardingCols.length > 0) {
+    recos.push({
+      priority: 'high',
+      title: 'Improve Onboarding Completion',
+      desc: `Onboarding-related columns detected: [${onboardingCols.join(', ')}]. Users who don't complete onboarding typically show significantly lower long-term retention.`,
+      action: `Segment users by onboarding completion status and compare retention/engagement metrics. Target non-completers with guided flows.`
+    });
+  }
+
+  // Churn / retention
+  const churnCols = STATE.headers.filter(h => /churn|retain|cancel|leave/i.test(h));
+  if (churnCols.length > 0) {
+    recos.push({
+      priority: 'high',
+      title: 'Run Churn Driver Analysis',
+      desc: `Churn-related columns detected: [${churnCols.join(', ')}]. Identifying the strongest predictors of churn is a high-ROI product initiative.`,
+      action: `Use cohort analysis to compare all numeric metrics between churned and retained users. Prioritise the metric with the largest gap.`
+    });
+  }
+
+  // High variance reco
+  STATE.numericCols.forEach(col => {
+    const m = STATE.columnMeta[col];
+    if (!m.stdDev || !m.mean || m.mean === 0) return;
+    const cv = m.stdDev / Math.abs(m.mean);
+    if (cv > 1.5) {
+      recos.push({
+        priority: 'medium',
+        title: `Segment Analysis for "${col}"`,
+        desc: `"${col}" has extreme variance (CV=${cv.toFixed(2)}), suggesting two or more very different user groups may be mixed together.`,
+        action: `Run cohort analysis on "${col}" across all categorical columns to identify which segment drives the outlier values.`
+      });
+    }
+  });
+
+  // Experiment recommendation
+  if (STATE.catCols.length > 0 && STATE.numericCols.length > 0) {
+    recos.push({
+      priority: 'medium',
+      title: 'Design an A/B Experiment',
+      desc: `Based on cohort differences identified in the data, there is a clear opportunity to test product interventions for underperforming segments.`,
+      action: `Identify the lowest-performing cohort in "${STATE.catCols[0]}" and design an intervention experiment targeting that segment.`
+    });
+  }
+
+  // Low coverage reco
+  const lowUnique = STATE.numericCols.filter(col => STATE.columnMeta[col].unique < 5);
+  if (lowUnique.length > 0) {
+    recos.push({
+      priority: 'low',
+      title: `Review Numeric Columns with Low Cardinality`,
+      desc: `Columns [${lowUnique.join(', ')}] are classified as numeric but have very few unique values. They may be better treated as categorical.`,
+      action: `Re-classify these as categorical dimensions and re-run cohort analysis for potentially richer segmentation.`
+    });
+  }
+
+  recos.push({
+    priority: 'low',
+    title: 'Establish Metric Benchmarks',
+    desc: `Summary statistics are now available for all numeric columns. Use these to set internal benchmarks for product health monitoring.`,
+    action: `Document p25, median, and p75 for each key metric as baseline thresholds for future dashboards and alerting.`
+  });
+
+  return recos.slice(0, 9);
+}
+
+/* ════════════════════════════════════════════════
+   MATH UTILITIES
+════════════════════════════════════════════════ */
+function mean(arr) {
+  const nums = arr.filter(v => typeof v === 'number' && !isNaN(v));
+  if (!nums.length) return 0;
+  return nums.reduce((a,b) => a+b, 0) / nums.length;
+}
+
+function median(arr) {
+  const nums = arr.filter(v => typeof v === 'number' && !isNaN(v)).sort((a,b) => a-b);
+  if (!nums.length) return 0;
+  const mid = Math.floor(nums.length / 2);
+  return nums.length % 2 === 0 ? (nums[mid-1] + nums[mid]) / 2 : nums[mid];
+}
+
+function stdDev(arr) {
+  const nums = arr.filter(v => typeof v === 'number' && !isNaN(v));
+  if (nums.length < 2) return 0;
+  const m = mean(nums);
+  return Math.sqrt(nums.reduce((s,v) => s + (v-m)**2, 0) / nums.length);
+}
+
+function pearson(a, b) {
+  const pairs = a.map((v,i) => [v, b[i]]).filter(([x,y]) =>
+    typeof x === 'number' && typeof y === 'number' && !isNaN(x) && !isNaN(y)
+  );
+  if (pairs.length < 3) return 0;
+  const xs = pairs.map(p => p[0]);
+  const ys = pairs.map(p => p[1]);
+  const mx = mean(xs), my = mean(ys);
+  const num = xs.reduce((s,x,i) => s + (x-mx)*(ys[i]-my), 0);
+  const den = Math.sqrt(xs.reduce((s,x) => s+(x-mx)**2,0) * ys.reduce((s,y) => s+(y-my)**2,0));
+  return den === 0 ? 0 : Math.max(-1, Math.min(1, num / den));
+}
+
+function histogram(vals, bins=12) {
+  const nums = vals.filter(v => typeof v === 'number' && !isNaN(v));
+  if (!nums.length) return { labels: [], counts: [] };
+  const mn = Math.min(...nums), mx = Math.max(...nums);
+  const step = (mx - mn) / bins || 1;
+  const counts = new Array(bins).fill(0);
+  nums.forEach(v => {
+    const i = Math.min(Math.floor((v - mn) / step), bins - 1);
+    counts[i]++;
+  });
+  const labels = counts.map((_, i) => fmt(mn + i * step));
+  return { labels, counts };
+}
+
+function frequency(arr) {
+  const freq = {};
+  arr.forEach(v => {
+    const k = String(v ?? 'null');
+    freq[k] = (freq[k] || 0) + 1;
+  });
+  return freq;
+}
+
+function fmt(n) {
+  if (n === null || n === undefined || isNaN(n)) return '—';
+  if (Math.abs(n) >= 1e6)  return (n/1e6).toFixed(1) + 'M';
+  if (Math.abs(n) >= 1e3)  return (n/1e3).toFixed(1) + 'K';
+  if (Math.abs(n) < 0.01 && n !== 0)  return n.toExponential(2);
+  return parseFloat(n.toFixed(2)).toString();
+}
+
+/* ════════════════════════════════════════════════
+   UI UTILITIES
+════════════════════════════════════════════════ */
+function showProgress(pct) {
+  const wrap = document.getElementById('progressWrap');
+  const fill = document.getElementById('progressFill');
+  wrap.style.display = 'block';
+  fill.style.width = pct + '%';
+}
+
+function hideProgress() {
+  document.getElementById('progressWrap').style.display = 'none';
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function resetAll() {
+  // Destroy chart instances
+  Object.values(STATE.chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+  if (cohortChartInstance) { try { cohortChartInstance.destroy(); } catch(e){} }
+  cohortChartInstance = null;
+
+  // Reset state
+  STATE = { rawData:[], headers:[], columnMeta:{}, numericCols:[], catCols:[], fileName:'', rowCount:0, chartInstances:{} };
+
+  // Reset UI
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileBar').classList.remove('visible');
+  document.getElementById('cohortResults').classList.remove('visible');
+  ['sectionIntel','sectionChurn','sectionSummary','sectionCharts','sectionCohort','sectionHyp','sectionInsights','sectionReco','sectionQuery']
+    .forEach(id => document.getElementById(id).classList.add('hidden'));
+  clearChat(true);
+
+  document.getElementById('statusChip').textContent = 'No data loaded';
+  document.getElementById('statusChip').className   = 'chip chip-neutral';
+
+  toast('Dataset removed.');
+}
+
+/* ════════════════════════════════════════════════
+   QUERY AGENT — Natural Language Q&A over CSV data
+════════════════════════════════════════════════ */
+
+// Conversation history for multi-turn context
+let chatHistory = [];
+
+// Populate example questions based on detected columns
+function populateQueryExamples() {
+  const examples = [];
+
+  // Churn-related
+  if (STATE.headers.some(h => /churn/i.test(h))) {
+    const churnCol = STATE.headers.find(h => /churn/i.test(h));
+    const planCol  = STATE.headers.find(h => /plan|tier|type/i.test(h));
+    if (planCol) examples.push(`Which ${planCol} has the highest ${churnCol} rate?`);
+    examples.push(`What percentage of users have churned?`);
+  }
+
+  // Engagement
+  const sessionCol = STATE.headers.find(h => /session|visit|login/i.test(h));
+  const catCol     = STATE.catCols[0];
+  if (sessionCol && catCol) {
+    examples.push(`Compare average ${sessionCol} across ${catCol} groups`);
+  }
+
+  // Onboarding
+  if (STATE.headers.some(h => /onboard|setup/i.test(h))) {
+    const ob = STATE.headers.find(h => /onboard|setup/i.test(h));
+    examples.push(`How does ${ob} affect churn or engagement?`);
+  }
+
+  // Generic numeric
+  if (STATE.numericCols.length > 0) {
+    examples.push(`What are the top 3 insights from this dataset?`);
+    examples.push(`Which column has the most variation across user segments?`);
+  }
+
+  // Generic
+  examples.push(`Summarise the key product health metrics in this data`);
+  examples.push(`Which user segment should we prioritise for retention efforts?`);
+  examples.push(`What product actions do you recommend based on this data?`);
+
+  const container = document.getElementById('queryExampleChips');
+  container.innerHTML = examples.slice(0, 5).map(q => `
+    <button class="q-chip" onclick="useExampleQuery(this)">${q}</button>
+  `).join('');
+}
+
+function useExampleQuery(el) {
+  document.getElementById('queryInput').value = el.textContent;
+  document.getElementById('queryInput').focus();
+  document.querySelectorAll('.q-chip').forEach(c => c.style.opacity = '0.5');
+  el.style.opacity = '1';
+  el.style.background = '#fdf4ff';
+  el.style.borderColor = '#c4b5fd';
+  el.style.color = '#5b21b6';
+}
+
+// Enter to submit (Shift+Enter for newline)
+document.addEventListener('DOMContentLoaded', () => {
+  const ta = document.getElementById('queryInput');
+  if (ta) {
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        submitQuery();
+      }
+    });
+  }
+});
+
+// Build a compact data summary to send in the prompt (avoid token overload)
+function buildQueryContext() {
+  const SAMPLE_ROWS = 30; // send a sample of rows
+
+  // Column overview
+  const colOverview = STATE.headers.map(col => {
+    const m = STATE.columnMeta[col];
+    if (m.type === 'numeric') {
+      return `${col} [numeric] mean=${fmt(m.mean)} median=${fmt(m.median)} min=${fmt(m.min)} max=${fmt(m.max)} missing=${m.nullPct}%`;
+    } else {
+      return `${col} [${m.type}] unique=${m.unique} values=(${m.samples.slice(0,4).join(', ')}) missing=${m.nullPct}%`;
+    }
+  }).join('\n');
+
+  // Sample rows as compact CSV
+  const sample = STATE.rawData.slice(0, SAMPLE_ROWS);
+  const csvHeader = STATE.headers.join(',');
+  const csvRows   = sample.map(row => STATE.headers.map(h => row[h] ?? '').join(','));
+  const sampleCsv = [csvHeader, ...csvRows].join('\n');
+
+  // Aggregate stats by key categorical columns (top 2)
+  let cohortContext = '';
+  STATE.catCols.slice(0, 2).forEach(catCol => {
+    const catMeta = STATE.columnMeta[catCol];
+    if (catMeta.unique > 1 && catMeta.unique <= 15) {
+      const groups = {};
+      STATE.rawData.forEach(row => {
+        const key = String(row[catCol] ?? 'null');
+        if (!groups[key]) groups[key] = { count: 0, sums: {} };
+        groups[key].count++;
+        STATE.numericCols.slice(0, 5).forEach(nc => {
+          const v = parseFloat(row[nc]);
+          if (!isNaN(v)) {
+            groups[key].sums[nc] = (groups[key].sums[nc] || 0) + v;
+          }
+        });
+      });
+      cohortContext += `\n\nCohort stats by ${catCol}:\n`;
+      Object.entries(groups).forEach(([key, g]) => {
+        const stats = STATE.numericCols.slice(0,5).map(nc => {
+          const avg = g.sums[nc] != null ? (g.sums[nc] / g.count).toFixed(2) : 'n/a';
+          return `${nc}_avg=${avg}`;
+        }).join(' ');
+        cohortContext += `  ${key}: count=${g.count} ${stats}\n`;
+      });
+    }
+  });
+
+  return `DATASET: ${STATE.fileName} | ${STATE.rowCount} rows | ${STATE.headers.length} columns
+
+COLUMN DEFINITIONS:
+${colOverview}
+${cohortContext}
+SAMPLE DATA (first ${SAMPLE_ROWS} rows):
+${sampleCsv}`;
+}
+
+async function submitQuery() {
+  const input = document.getElementById('queryInput').value.trim();
+  if (!input) return;
+  if (!STATE.rawData.length) { toast('Please upload a dataset first.'); return; }
+
+  const btn = document.getElementById('queryBtn');
+  btn.disabled = true;
+  btn.classList.add('loading');
+  document.getElementById('queryInput').value = '';
+  document.querySelectorAll('.q-chip').forEach(c => { c.style.opacity=''; c.style.background=''; c.style.borderColor=''; c.style.color=''; });
+
+  // Show chat panel, hide empty state
+  document.getElementById('chatEmpty').style.display  = 'none';
+  document.getElementById('chatPanel').style.display  = 'block';
+
+  // Add user message to UI
+  appendUserMessage(input);
+
+  // Add thinking bubble
+  const thinkingId = appendThinking();
+
+  // Build system prompt + context
+  const dataContext = buildQueryContext();
+
+  const systemPrompt = `You are a Product Intelligence Agent. A product manager has uploaded a CSV dataset and is asking you questions about it. 
+Your job is to analyse the data and give clear, specific, data-grounded answers.
+
+Always:
+- Answer based on the actual data provided, not general knowledge
+- Give specific numbers, percentages, or comparisons when available
+- Identify the most important product insight in your answer
+- Suggest one concrete product action or next step
+- Be concise — 3-5 sentences max per section
+- Use plain English, not jargon
+
+Respond in this JSON structure only (no markdown, no backticks):
+{
+  "direct_answer": "Direct answer to the question with specific numbers from the data",
+  "key_metrics": [
+    {"label": "metric name", "value": "value"},
+    {"label": "metric name", "value": "value"}
+  ],
+  "insight": "The most important product insight this reveals",
+  "recommended_action": "One specific product action to take based on this finding"
+}`;
+
+  // Build messages array with history
+  const messages = [
+    ...chatHistory,
+    {
+      role: 'user',
+      content: `DATA CONTEXT:\n${dataContext}\n\nQUESTION: ${input}`
+    }
+  ];
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: systemPrompt,
+        messages
+      })
     });
 
-    // Simulate multi-agent processing time
-    setTimeout(() => {
-      const data = scenarios[focus] || scenarios.churn;
-      renderResults(data);
-      btn.disabled = false;
-      btn.textContent = '▶ Run Agent Analysis';
-      document.getElementById('loadingBar').style.display = 'none';
-      document.getElementById('thinkingMsg').style.display = 'none';
-    }, 2200);
+    const data = await response.json();
+
+    if (data.error) throw new Error(data.error.message || 'API error');
+
+    const raw = data.content.map(b => b.text || '').join('');
+
+    let parsed;
+    try {
+      parsed = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    } catch(e) {
+      // Fallback: treat as plain text answer
+      parsed = { direct_answer: raw, key_metrics: [], insight: '', recommended_action: '' };
+    }
+
+    // Remove thinking bubble
+    removeThinking(thinkingId);
+
+    // Add agent response
+    appendAgentMessage(parsed);
+
+    // Add to chat history (without full data context to keep tokens manageable)
+    chatHistory.push({ role: 'user', content: input });
+    chatHistory.push({ role: 'assistant', content: raw });
+
+    // Keep history bounded to last 6 turns
+    if (chatHistory.length > 12) chatHistory = chatHistory.slice(-12);
+
+  } catch(err) {
+    removeThinking(thinkingId);
+    appendAgentMessage({
+      direct_answer: `I encountered an error: ${err.message}. This may be a network issue or API configuration problem.`,
+      key_metrics: [],
+      insight: '',
+      recommended_action: ''
+    });
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('loading');
+    // Scroll to bottom of chat
+    const right = document.getElementById('queryRight');
+    right.scrollTop = right.scrollHeight;
+  }
+}
+
+function appendUserMessage(text) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-user';
+  div.innerHTML = `<div class="user-bubble">${escapeHtml(text)}</div>`;
+  container.appendChild(div);
+  scrollChat();
+}
+
+function appendThinking() {
+  const id = 'thinking_' + Date.now();
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-agent';
+  div.id = id;
+  div.innerHTML = `
+    <div class="agent-avatar">🤖</div>
+    <div class="thinking-bubble">
+      Analysing your data
+      <span class="thinking-dots">
+        <span></span><span></span><span></span>
+      </span>
+    </div>`;
+  container.appendChild(div);
+  scrollChat();
+  return id;
+}
+
+function removeThinking(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function appendAgentMessage(parsed) {
+  const container = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg chat-msg-agent';
+
+  const metricsHtml = parsed.key_metrics && parsed.key_metrics.length > 0 ? `
+    <div class="answer-metrics">
+      ${parsed.key_metrics.map(m => `
+        <div class="answer-metric-pill">
+          <span class="amp-val">${escapeHtml(String(m.value))}</span>
+          <span class="amp-lbl">${escapeHtml(m.label)}</span>
+        </div>
+      `).join('')}
+    </div>` : '';
+
+  const insightHtml = parsed.insight ? `
+    <div class="answer-insight">💡 ${escapeHtml(parsed.insight)}</div>` : '';
+
+  const actionHtml = parsed.recommended_action ? `
+    <div class="answer-action">${escapeHtml(parsed.recommended_action)}</div>` : '';
+
+  div.innerHTML = `
+    <div class="agent-avatar">🤖</div>
+    <div class="agent-bubble">
+      <div class="answer-section">
+        <div class="answer-text">${escapeHtml(parsed.direct_answer)}</div>
+        ${metricsHtml}
+      </div>
+      ${insightHtml}
+      ${actionHtml}
+    </div>`;
+
+  container.appendChild(div);
+  scrollChat();
+}
+
+function scrollChat() {
+  setTimeout(() => {
+    const right = document.getElementById('queryRight');
+    if (right) right.scrollTop = right.scrollHeight;
+  }, 50);
+}
+
+function clearChat(silent = false) {
+  chatHistory = [];
+  const msgs = document.getElementById('chatMessages');
+  if (msgs) msgs.innerHTML = '';
+  const chatPanel = document.getElementById('chatPanel');
+  const chatEmpty = document.getElementById('chatEmpty');
+  if (chatPanel) chatPanel.style.display = 'none';
+  if (chatEmpty) chatEmpty.style.display = 'flex';
+  if (!silent) toast('Conversation cleared.');
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+/* ════════════════════════════════════════════════
+   FEATURE 1 — CHART INSIGHT ENGINE
+   Analyses chart data and returns a human-readable
+   explanation of the key pattern detected.
+════════════════════════════════════════════════ */
+function generateChartInsight(data, columnName, chartType) {
+  try {
+    if (chartType === 'histogram') {
+      const { labels, counts, col } = data;
+      if (!counts || counts.length === 0) return null;
+      const total   = counts.reduce((a,b) => a+b, 0);
+      const maxIdx  = counts.indexOf(Math.max(...counts));
+      const peakLbl = labels[maxIdx] || '';
+      const m       = STATE.columnMeta[col];
+      const topShare = total > 0 ? ((Math.max(...counts) / total) * 100).toFixed(0) : 0;
+      const skewDir  = m && m.mean > m.median * 1.1 ? 'right-skewed — a small number of very high values pull the mean up'
+                     : m && m.mean < m.median * 0.9 ? 'left-skewed — a cluster of low values pulls the mean down'
+                     : 'roughly symmetrical';
+      const zeroIdx  = labels.findIndex(l => parseFloat(l) === 0 || l === '0');
+      const zeroShare = zeroIdx >= 0 && total > 0 ? ((counts[zeroIdx] / total) * 100).toFixed(0) : 0;
+      if (parseFloat(zeroShare) > 30) {
+        return `${zeroShare}% of records have a value of 0 for "${col}", indicating a large segment that never engaged with or triggered this metric. This group likely represents a distinct user cohort worth investigating separately.`;
+      }
+      const gapNote = m && Math.abs((m.mean||0) - (m.median||0)) > (m.stdDev||1) * 0.3
+        ? 'The gap between mean and median suggests outliers are present.'
+        : 'Values are fairly concentrated around the centre.';
+      return `Most values cluster around ${peakLbl} (${topShare}% of records). The distribution is ${skewDir}. Mean is ${fmt(m?.mean)}, median is ${fmt(m?.median)}. ${gapNote}`;
+    }
+
+    if (chartType === 'categorical') {
+      const { sorted, col } = data;
+      if (!sorted || sorted.length === 0) return null;
+      const total    = sorted.reduce((s,[,v]) => s+v, 0);
+      const top      = sorted[0];
+      const bottom   = sorted[sorted.length - 1];
+      const topShare = total > 0 ? ((top[1] / total) * 100).toFixed(0) : 0;
+      const botShare = total > 0 ? ((bottom[1] / total) * 100).toFixed(0) : 0;
+      if (sorted.length === 1) {
+        return `All records belong to the single category "${top[0]}". This column may not provide useful segmentation.`;
+      }
+      if (sorted.length === 2) {
+        return `"${top[0]}" accounts for ${topShare}% of records, "${bottom[0]}" for ${botShare}%. ${parseFloat(topShare) > 70 ? 'The distribution is heavily skewed toward one category — this dominant segment likely drives overall product metrics.' : 'The split is relatively balanced.'}`;
+      }
+      return `"${top[0]}" is the dominant segment at ${topShare}% of records, followed by "${sorted[1]?.[0]}" at ${total > 0 ? ((sorted[1][1]/total)*100).toFixed(0) : 0}%. "${bottom[0]}" is the smallest at ${botShare}%. ${parseFloat(topShare) > 50 ? `The "${top[0]}" group disproportionately shapes overall averages — consider analysing it separately.` : 'No single category dominates, suggesting a balanced distribution.'}`;
+    }
+
+    if (chartType === 'cohort') {
+      const { groupMeans, metricCol, overall } = data;
+      if (!groupMeans || groupMeans.length < 2) return null;
+      const top    = groupMeans[0];
+      const bottom = groupMeans[groupMeans.length - 1];
+      const diffPct = overall > 0 ? (Math.abs(top.m - bottom.m) / Math.abs(overall) * 100).toFixed(0) : 0;
+      return `"${top.k}" shows the highest average ${metricCol} (${fmt(top.m)}), while "${bottom.k}" shows the lowest (${fmt(bottom.m)}) — a ${diffPct}% gap. ${parseFloat(diffPct) > 50 ? `This is a significant difference. "${bottom.k}" users may be underserved or represent a distinct use case that warrants a tailored product strategy.` : 'The difference is moderate — worth monitoring but may not require immediate action.'}`;
+    }
+  } catch(e) { return null; }
+  return null;
+}
+
+/* ════════════════════════════════════════════════
+   FEATURE 2 — CHURN DRIVER DETECTION
+════════════════════════════════════════════════ */
+function detectChurnColumn() {
+  const byName = STATE.headers.find(h =>
+    /churn|cancel|attrition|leave|exit|churned/i.test(h) &&
+    STATE.columnMeta[h] && (STATE.columnMeta[h].type === 'binary' || STATE.columnMeta[h].unique <= 4)
+  );
+  if (byName) return byName;
+  return STATE.headers.find(h => {
+    const m = STATE.columnMeta[h];
+    if (!m || m.unique > 4) return false;
+    const vals = [...new Set(STATE.rawData.map(r => String(r[h]).toLowerCase()))];
+    return vals.some(v => ['yes','no','1','0','true','false'].includes(v));
+  }) || null;
+}
+
+function isChurned(row, churnCol) {
+  const v = String(row[churnCol] ?? '').toLowerCase().trim();
+  return v === 'yes' || v === '1' || v === 'true';
+}
+
+function renderChurnDrivers() {
+  const body = document.getElementById('churnBody');
+  const churnCol = detectChurnColumn();
+
+  if (!churnCol) {
+    body.innerHTML = `
+      <div class="churn-no-col">
+        <div style="font-size:24px;margin-bottom:8px">🔍</div>
+        <div style="font-weight:500;color:var(--ink2);margin-bottom:6px">No churn column detected</div>
+        <div>Add a column named "churned", "churn", or "cancelled" with Yes/No or 0/1 values to enable automatic churn driver analysis.</div>
+      </div>`;
+    document.getElementById('churnMeta').textContent = 'No churn column found';
+    return;
   }
 
-  function renderResults(data) {
-    // Hypotheses
-    const hypEl = document.getElementById('hyp-results');
-    hypEl.innerHTML = data.hypotheses.map(h => `
-      <div class="hyp-card">
-        <div class="hyp-header">
-          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${h.segment}</span>
-          <span class="hyp-confidence conf-${h.confidence.toLowerCase()}">${h.confidence}</span>
-        </div>
-        <div class="hyp-text">${h.text}</div>
-        <div class="hyp-meta">
-          <span>→ ${h.metric}</span>
-        </div>
-      </div>
-    `).join('');
-    document.getElementById('empty-hypotheses').style.display = 'none';
-    hypEl.style.display = 'flex';
-    hypEl.style.flexDirection = 'column';
-    hypEl.style.gap = '10px';
+  const total     = STATE.rawData.length;
+  const churned   = STATE.rawData.filter(r => isChurned(r, churnCol)).length;
+  const churnRate = total > 0 ? (churned / total * 100) : 0;
+  const retained  = total - churned;
 
-    // Metrics
-    const metEl = document.getElementById('met-results');
-    metEl.innerHTML = `<div class="metric-row">${data.metrics.map(m => `
-      <div class="metric-card">
-        <div class="metric-label">${m.label}</div>
-        <div class="metric-value">${m.value}</div>
-        <div class="metric-delta ${m.up ? 'delta-up' : 'delta-down'}">${m.delta}</div>
-      </div>
-    `).join('')}</div>`;
-    document.getElementById('empty-metrics').style.display = 'none';
-    metEl.style.display = 'block';
+  document.getElementById('churnMeta').textContent =
+    `Churn column: "${churnCol}" · Overall churn rate: ${churnRate.toFixed(1)}%`;
 
-    // Segments
-    const segEl = document.getElementById('seg-results');
-    segEl.innerHTML = `<div class="segment-list">${data.segments.map(s => `
-      <div class="seg-item">
-        <span class="seg-name">${s.name}</span>
-        <div class="seg-bar-wrap"><div class="seg-bar" style="width:${s.pct}%"></div></div>
-        <span class="seg-pct">${s.pct}%</span>
-      </div>
-    `).join('')}</div>`;
-    document.getElementById('empty-segments').style.display = 'none';
-    segEl.style.display = 'block';
+  const drivers = [];
 
-    // Prescriptions
-    const rxEl = document.getElementById('rx-results');
-    rxEl.innerHTML = `<div class="prescription-list">${data.prescriptions.map(r => `
-      <div class="rx-card">
-        <div class="rx-header">
-          <span class="rx-title">${r.title}</span>
-          <span class="rx-impact">${r.impact}</span>
-        </div>
-        <div class="rx-desc">${r.desc}</div>
-      </div>
-    `).join('')}</div>`;
-    document.getElementById('empty-prescription').style.display = 'none';
-    rxEl.style.display = 'block';
+  // Categorical columns — compute churn rate per category
+  STATE.catCols.forEach(catCol => {
+    if (catCol === churnCol) return;
+    const m = STATE.columnMeta[catCol];
+    if (m.unique < 2 || m.unique > 20) return;
+    const groups = {};
+    STATE.rawData.forEach(row => {
+      const key = String(row[catCol] ?? 'null');
+      if (!groups[key]) groups[key] = { total:0, churned:0 };
+      groups[key].total++;
+      if (isChurned(row, churnCol)) groups[key].churned++;
+    });
+    const rates = Object.entries(groups)
+      .filter(([,g]) => g.total >= 3)
+      .map(([k,g]) => ({ k, rate: g.churned/g.total*100, n: g.total, churned: g.churned }))
+      .sort((a,b) => b.rate - a.rate);
+    if (rates.length < 2) return;
+    const spread = rates[0].rate - rates[rates.length-1].rate;
+    if (spread < 3) return;
+    drivers.push({ col: catCol, rates, maxRate: rates[0].rate, minRate: rates[rates.length-1].rate, spread, churnRate });
+  });
+
+  // Numeric columns — median split
+  STATE.numericCols.forEach(numCol => {
+    if (/id$/i.test(numCol)) return;
+    const m = STATE.columnMeta[numCol];
+    if (!m.numericVals || m.numericVals.length < 10) return;
+    const med = m.median;
+    const groups = { 'Below Median': {total:0,churned:0}, 'Above Median': {total:0,churned:0} };
+    STATE.rawData.forEach(row => {
+      const v = parseFloat(row[numCol]);
+      if (isNaN(v)) return;
+      const key = v <= med ? 'Below Median' : 'Above Median';
+      groups[key].total++;
+      if (isChurned(row, churnCol)) groups[key].churned++;
+    });
+    const rates = Object.entries(groups)
+      .filter(([,g]) => g.total >= 3)
+      .map(([k,g]) => ({ k: `${numCol}: ${k}`, rate: g.churned/g.total*100, n: g.total, churned: g.churned }))
+      .sort((a,b) => b.rate - a.rate);
+    if (rates.length < 2) return;
+    const spread = rates[0].rate - rates[rates.length-1].rate;
+    if (spread < 5) return;
+    drivers.push({ col: numCol + ' (median split)', rates, maxRate: rates[0].rate, minRate: rates[rates.length-1].rate, spread, churnRate, isNumeric: true });
+  });
+
+  drivers.sort((a,b) => b.spread - a.spread);
+
+  if (drivers.length === 0) {
+    body.innerHTML = `
+      <div class="churn-col-detected"><span>✓</span> Churn column: <strong>"${churnCol}"</strong> · Overall: <strong>${churnRate.toFixed(1)}%</strong></div>
+      <div class="churn-no-col">No significant churn drivers found. Try adding more segmentation columns (plan type, region, acquisition channel, etc.)</div>`;
+    return;
   }
+
+  const topDrivers = drivers.slice(0, 5);
+  STATE.churnDrivers = topDrivers;
+  STATE.churnCol     = churnCol;
+  STATE.churnRate    = churnRate;
+
+  let html = `
+    <div class="churn-col-detected"><span>✓</span> Churn column detected: <strong>"${churnCol}"</strong></div>
+    <div class="overall-churn-banner">
+      <div class="ocb-stat">
+        <span class="ocb-val" style="color:var(--red)">${churnRate.toFixed(1)}%</span>
+        <span class="ocb-label">Overall Churn</span>
+      </div>
+      <div class="ocb-divider"></div>
+      <div class="ocb-stat">
+        <span class="ocb-val">${churned.toLocaleString()}</span>
+        <span class="ocb-label">Churned</span>
+      </div>
+      <div class="ocb-divider"></div>
+      <div class="ocb-stat">
+        <span class="ocb-val">${retained.toLocaleString()}</span>
+        <span class="ocb-label">Retained</span>
+      </div>
+      <div class="ocb-divider"></div>
+      <div class="ocb-bar-section">
+        <div class="ocb-bar-label">Churn distribution</div>
+        <div class="ocb-bar"><div class="ocb-bar-fill" style="width:${Math.min(churnRate,100)}%"></div></div>
+      </div>
+    </div>
+    <div class="churn-drivers-grid">`;
+
+  topDrivers.forEach((driver, idx) => {
+    const impact    = driver.spread > 25 ? 'critical' : driver.spread > 12 ? 'high' : 'medium';
+    const impactLbl = impact.charAt(0).toUpperCase() + impact.slice(1) + ' Impact';
+    const maxBarPct = Math.max(...driver.rates.map(r => r.rate));
+    const topSeg    = driver.rates[0];
+    const botSeg    = driver.rates[driver.rates.length - 1];
+    const multiplier = botSeg.rate > 0 ? (topSeg.rate / botSeg.rate).toFixed(1) : '—';
+    const insightText = `${String(topSeg.k).substring(0,35)} shows ${topSeg.rate.toFixed(1)}% churn vs ${botSeg.rate.toFixed(1)}% for ${String(botSeg.k).substring(0,25)} — a ${driver.spread.toFixed(0)}pp gap (${multiplier}× difference). This is the ${idx === 0 ? 'primary' : idx === 1 ? 'second-largest' : 'a significant'} churn driver.`;
+    const recoText  = generateChurnReco(driver, topSeg, botSeg, churnRate);
+
+    const bars = driver.rates.slice(0,8).map(seg => {
+      const fillPct   = maxBarPct > 0 ? (seg.rate / maxBarPct * 100) : 0;
+      const fillClass = seg.rate > churnRate * 1.5 ? 'fill-danger' : seg.rate > churnRate * 1.1 ? 'fill-warn' : 'fill-ok';
+      return `
+        <div class="churn-bar-row">
+          <span class="churn-bar-label" title="${seg.k}">${String(seg.k).substring(0,18)}</span>
+          <div class="churn-bar-track">
+            <div class="churn-bar-fill ${fillClass}" style="width:${fillPct}%">${seg.rate > 6 ? seg.rate.toFixed(1)+'%' : ''}</div>
+          </div>
+          <span class="churn-bar-pct">${seg.rate.toFixed(1)}%</span>
+        </div>`;
+    }).join('');
+
+    html += `
+      <div class="churn-driver-card delay-${Math.min(idx+1,6)}">
+        <div class="churn-driver-header">
+          <div class="churn-driver-title">
+            <div class="churn-driver-rank">${idx+1}</div>
+            ${driver.col}
+          </div>
+          <span class="churn-impact-badge impact-${impact}">${impactLbl}</span>
+        </div>
+        <div class="churn-driver-body">
+          <div class="churn-bars">${bars}</div>
+          <div class="churn-driver-insight">⚠ ${insightText}</div>
+          <div class="churn-driver-reco">${recoText}</div>
+        </div>
+      </div>`;
+  });
+
+  html += '</div>';
+  body.innerHTML = html;
+}
+
+function generateChurnReco(driver, topSeg, botSeg, overallRate) {
+  const col  = driver.col.replace(' (median split)', '');
+  const diff = (topSeg.rate - overallRate).toFixed(0);
+  if (/plan|tier|type/i.test(col))
+    return `"${String(topSeg.k).substring(0,30)}" churns ${diff}pp above average. Review pricing fit, value clarity and feature availability. Consider a targeted upgrade offer or dedicated onboarding improvement for this plan.`;
+  if (/channel|source|acquisition|campaign/i.test(col))
+    return `The "${String(topSeg.k).substring(0,30)}" acquisition channel brings users who churn more. Adjust targeting criteria, improve post-acquisition onboarding, or reduce investment until retention improves.`;
+  if (/device|platform|os/i.test(col))
+    return `"${String(topSeg.k).substring(0,30)}" device users show elevated churn. Investigate UX or performance issues specific to this platform and prioritise a platform-specific improvement sprint.`;
+  if (/region|country|city|location/i.test(col))
+    return `The "${String(topSeg.k).substring(0,30)}" region has disproportionate churn. Investigate localisation gaps, pricing sensitivity or support quality, and consider region-specific retention tactics.`;
+  if (/onboard|setup|complet/i.test(col))
+    return `Users who ${String(topSeg.k).toLowerCase().substring(0,40)} churn at ${topSeg.rate.toFixed(1)}%. Strengthen onboarding with in-app prompts, check-in emails, or a guided setup flow for incomplete users.`;
+  if (/support|ticket|call/i.test(col) || driver.isNumeric)
+    return `${String(topSeg.k).substring(0,40)} is associated with ${topSeg.rate.toFixed(1)}% churn. Proactively reach out to at-risk users before they escalate. Consider a health-score driven outreach programme.`;
+  return `"${String(topSeg.k).substring(0,30)}" users churn ${diff}pp above average. Run a targeted retention experiment — personalised messaging, a special offer, or proactive outreach for this cohort.`;
+}
+
+/* ════════════════════════════════════════════════
+   FEATURES 3 & 4 — PRODUCT INTELLIGENCE SUMMARY
+   Synthesises top churn driver, risk segment,
+   churn rate and recommended action into one panel.
+════════════════════════════════════════════════ */
+function renderIntelligenceSummary() {
+  const churnCol = detectChurnColumn();
+  let churnRate  = null;
+  let topRiskSeg  = '—';
+  let topRiskRate = '—';
+  let topDriver   = '—';
+  let topAction   = 'Upload data with a churn column for specific recommendations.';
+  let narrative   = '';
+
+  if (churnCol) {
+    const total   = STATE.rawData.length;
+    const churned = STATE.rawData.filter(r => isChurned(r, churnCol)).length;
+    churnRate     = total > 0 ? (churned / total * 100) : 0;
+
+    // Find highest-churn segment
+    let bestSeg = null, bestRate = 0, bestCol = '';
+    STATE.catCols.forEach(catCol => {
+      if (catCol === churnCol) return;
+      const m = STATE.columnMeta[catCol];
+      if (m.unique < 2 || m.unique > 15) return;
+      const groups = {};
+      STATE.rawData.forEach(row => {
+        const key = String(row[catCol] ?? 'null');
+        if (!groups[key]) groups[key] = { total:0, churned:0 };
+        groups[key].total++;
+        if (isChurned(row, churnCol)) groups[key].churned++;
+      });
+      Object.entries(groups).forEach(([k,g]) => {
+        if (g.total < 5) return;
+        const r = g.churned / g.total * 100;
+        if (r > bestRate) { bestRate = r; bestSeg = k; bestCol = catCol; }
+      });
+    });
+
+    if (bestSeg) { topRiskSeg = `${bestSeg} (${bestCol})`; topRiskRate = `${bestRate.toFixed(1)}%`; }
+
+    // Find top driver by spread
+    const drivers = [];
+    STATE.catCols.forEach(catCol => {
+      if (catCol === churnCol) return;
+      const m = STATE.columnMeta[catCol];
+      if (m.unique < 2 || m.unique > 20) return;
+      const groups = {};
+      STATE.rawData.forEach(row => {
+        const key = String(row[catCol] ?? 'null');
+        if (!groups[key]) groups[key] = { total:0, churned:0 };
+        groups[key].total++;
+        if (isChurned(row, churnCol)) groups[key].churned++;
+      });
+      const rates = Object.entries(groups)
+        .filter(([,g]) => g.total >= 3)
+        .map(([k,g]) => ({ k, rate: g.churned/g.total*100 }));
+      if (rates.length < 2) return;
+      const spread = Math.max(...rates.map(r=>r.rate)) - Math.min(...rates.map(r=>r.rate));
+      drivers.push({ col: catCol, spread, topSeg: rates.sort((a,b)=>b.rate-a.rate)[0] });
+    });
+    drivers.sort((a,b) => b.spread - a.spread);
+
+    if (drivers.length > 0) {
+      topDriver = `${drivers[0].col} (${drivers[0].spread.toFixed(0)}pp spread)`;
+      topAction = generateChurnReco(drivers[0], drivers[0].topSeg, { rate: 0, k: 'lowest segment' }, churnRate);
+    }
+
+    narrative = `<strong>Overall churn rate is ${churnRate.toFixed(1)}%</strong> across ${total.toLocaleString()} records. ` +
+      (bestSeg ? `The highest-risk segment identified is <strong>"${bestSeg}"</strong> in "${bestCol}" at ${bestRate.toFixed(1)}% churn${bestRate > churnRate * 1.5 ? ' — ' + (bestRate/churnRate).toFixed(1) + '× the average rate' : ''}. ` : '') +
+      (drivers.length > 0 ? `The primary churn driver is <strong>"${drivers[0].col}"</strong>, showing a ${drivers[0].spread.toFixed(0)} percentage-point spread in churn rates across its segments. ` : '') +
+      `Prioritise retention efforts on the highest-risk cohort identified above.`;
+  } else {
+    const numSummary = STATE.numericCols.slice(0,2).map(col => {
+      const m = STATE.columnMeta[col];
+      return `"${col}" averages ${fmt(m.mean)}`;
+    }).join(' and ');
+    const catSummary = STATE.catCols.slice(0,2).map(col => {
+      const freq = {};
+      STATE.rawData.forEach(r => { const v = r[col]; freq[v] = (freq[v]||0)+1; });
+      const top = Object.entries(freq).sort((a,b)=>b[1]-a[1])[0];
+      return top ? `"${col}" is dominated by "${top[0]}" (${((top[1]/STATE.rowCount)*100).toFixed(0)}%)` : null;
+    }).filter(Boolean).join('. ');
+    narrative = `<strong>Dataset loaded:</strong> ${STATE.rowCount.toLocaleString()} rows, ${STATE.headers.length} columns (${STATE.numericCols.length} numeric, ${STATE.catCols.length} categorical). ${numSummary ? numSummary + '.' : ''} ${catSummary ? catSummary + '.' : ''} No churn column detected — add a "churned" column with Yes/No values to unlock churn driver analysis.`;
+    topDriver   = `${STATE.numericCols.length} numeric · ${STATE.catCols.length} categorical`;
+    topRiskSeg  = STATE.catCols[0] || 'N/A';
+    topRiskRate = 'N/A';
+    topAction   = STATE.catCols.length > 0 && STATE.numericCols.length > 0
+      ? `Run cohort analysis on "${STATE.catCols[0]}" against "${STATE.numericCols[0]}" to find your highest-impact segment.`
+      : 'Explore the Charts section to understand data distributions.';
+  }
+
+  document.getElementById('intelMeta').textContent =
+    churnCol ? `Churn column "${churnCol}" detected` : 'General data summary';
+
+  document.getElementById('intelGrid').innerHTML = `
+    <div class="intel-cell cell-risk">
+      <div class="intel-cell-label">🎯 Top Risk Segment</div>
+      <div class="intel-cell-val">${topRiskSeg}</div>
+      <div class="intel-cell-sub">Highest-churn cohort identified</div>
+    </div>
+    <div class="intel-cell cell-rate">
+      <div class="intel-cell-label">📉 Estimated Churn Rate</div>
+      <div class="intel-cell-val" style="color:${churnRate !== null && churnRate > 20 ? 'var(--red)' : churnRate !== null && churnRate > 10 ? 'var(--amber)' : 'var(--ink)'}">${topRiskRate}</div>
+      <div class="intel-cell-sub">Highest-risk cohort${churnRate !== null ? ' · Overall: ' + churnRate.toFixed(1) + '%' : ''}</div>
+    </div>
+    <div class="intel-cell cell-driver">
+      <div class="intel-cell-label">🔍 Primary Churn Driver</div>
+      <div class="intel-cell-val" style="font-size:15px;font-family:'Geist',sans-serif;font-weight:500;line-height:1.3">${topDriver}</div>
+      <div class="intel-cell-sub">Variable with largest churn spread</div>
+    </div>
+    <div class="intel-cell cell-action">
+      <div class="intel-cell-label">✅ Recommended Action</div>
+      <div class="intel-cell-val" style="font-size:12px;font-family:'Geist',sans-serif;font-weight:400;line-height:1.4">${topAction.substring(0,120)}${topAction.length > 120 ? '…' : ''}</div>
+      <div class="intel-cell-sub">Highest-leverage intervention</div>
+    </div>
+  `;
+
+  document.getElementById('intelNarrative').innerHTML = narrative;
+}
 </script>
 </body>
 </html>
