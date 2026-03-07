@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>EDA Agent · SaaS Intelligence Framework</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #16161f;
+    --border: #1e1e2e;
+    --accent: #7c6aff;
+    --accent2: #3ecfb2;
+    --accent3: #ff6b6b;
+    --accent4: #f9c74f;
+    --text: #e8e8f0;
+    --muted: #6b6b80;
+    --dim: #3a3a50;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.4;
+  }
+
+  /* GRID BACKGROUND */
+  .grid-bg {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(124,106,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,106,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    padding: 18px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(10,10,15,0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    transition: color 0.2s;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 4px 12px;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 2px;
+    letter-spacing: 0.1em;
+  }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 48px 80px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-eyebrow {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: var(--accent2);
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(48px, 7vw, 88px);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    margin-bottom: 32px;
+  }
+
+  .hero-title .line2 {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(124,106,255,0.5);
+  }
+
+  .hero-title .accent-word {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-desc {
+    max-width: 580px;
+    font-size: 17px;
+    color: var(--muted);
+    line-height: 1.8;
+    margin-bottom: 48px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    padding: 14px 32px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  }
+
+  .btn-primary:hover { background: #9b8dff; transform: translateY(-2px); }
+
+  .btn-ghost {
+    color: var(--muted);
+    padding: 14px 32px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+    background: transparent;
+  }
+
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  .hero-stats {
+    display: flex;
+    gap: 48px;
+    margin-top: 72px;
+    padding-top: 48px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat-item {}
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 36px;
+    color: var(--text);
+    display: block;
+    line-height: 1;
+  }
+  .stat-num span { color: var(--accent); }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    display: block;
+  }
+
+  /* GLOW BLOB */
+  .glow-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+  }
+  .blob1 {
+    width: 500px; height: 500px;
+    background: rgba(124,106,255,0.08);
+    top: -100px; right: -100px;
+  }
+  .blob2 {
+    width: 300px; height: 300px;
+    background: rgba(62,207,178,0.06);
+    bottom: 100px; right: 200px;
+  }
+
+  /* SECTIONS */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 48px;
+  }
+
+  .section-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent2);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 1px;
+    background: var(--accent2);
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    margin-bottom: 16px;
+  }
+
+  .section-sub {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 560px;
+    margin-bottom: 64px;
+  }
+
+  /* ARCHITECTURE */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .arch-card {
+    background: var(--surface);
+    padding: 36px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+
+  .arch-card:hover { background: var(--surface2); }
+
+  .arch-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px;
+    height: 100%;
+  }
+
+  .arch-card.orchestrator::before { background: var(--accent); }
+  .arch-card.data-eng::before { background: var(--accent2); }
+  .arch-card.analyst::before { background: var(--accent4); }
+  .arch-card.hypothesis::before { background: var(--accent3); }
+
+  .arch-icon {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .arch-card-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .arch-card-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  .arch-card-desc {
+    font-size: 14px;
+    color: var(--muted);
+    line-height: 1.7;
+    margin-bottom: 20px;
+  }
+
+  .arch-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .tool-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    background: var(--bg);
+    border: 1px solid var(--dim);
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+
+  .arch-card.orchestrator .tool-tag { border-color: rgba(124,106,255,0.3); color: var(--accent); }
+  .arch-card.data-eng .tool-tag { border-color: rgba(62,207,178,0.3); color: var(--accent2); }
+  .arch-card.analyst .tool-tag { border-color: rgba(249,199,79,0.3); color: var(--accent4); }
+  .arch-card.hypothesis .tool-tag { border-color: rgba(255,107,107,0.3); color: var(--accent3); }
+
+  /* FLOW */
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .flow-step {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 32px;
+    padding: 40px 0;
+    border-bottom: 1px solid var(--border);
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+
+  .flow-step.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .step-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 48px;
+    color: var(--dim);
+    line-height: 1;
+    padding-top: 4px;
+  }
+
+  .step-content {}
+  .step-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .step-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .step-desc {
+    font-size: 15px;
+    color: var(--muted);
+    max-width: 640px;
+    line-height: 1.8;
+  }
+
+  .step-example {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: var(--surface);
+    border-left: 2px solid var(--accent2);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    line-height: 1.7;
+  }
+
+  /* DEMO INTERACTIVE */
+  .demo-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+
+  .demo-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface2);
+  }
+
+  .demo-title-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f56; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #27c840; }
+
+  .demo-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--muted);
+    margin-left: 8px;
+  }
+
+  .demo-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .demo-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 520px;
+  }
+
+  .demo-left {
+    padding: 32px;
+    border-right: 1px solid var(--border);
+  }
+
+  .demo-right {
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .input-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .demo-textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    padding: 16px;
+    line-height: 1.7;
+    resize: none;
+    height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .demo-textarea:focus { border-color: var(--accent); }
+  .demo-textarea::placeholder { color: var(--dim); }
+
+  .demo-selects {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 16px;
+  }
+
+  .demo-select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 10px 14px;
+    outline: none;
+    width: 100%;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+  }
+
+  .demo-select:focus { border-color: var(--accent); }
+
+  .run-btn {
+    margin-top: 20px;
+    width: 100%;
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .run-btn:hover { background: #9b8dff; }
+
+  .run-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.4s;
+  }
+
+  .run-btn:hover::after { transform: translateX(100%); }
+
+  .output-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .output-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    padding: 10px 20px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: -1px;
+  }
+
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  .output-panel {
+    display: none;
+    flex: 1;
+  }
+
+  .output-panel.active { display: flex; flex-direction: column; gap: 12px; }
+
+  .output-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--dim);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    text-align: center;
+    gap: 12px;
+    border: 1px dashed var(--border);
+    padding: 40px;
+  }
+
+  .output-empty-icon { font-size: 32px; opacity: 0.4; }
+
+  /* hypothesis cards */
+  .hyp-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    border-radius: 0;
+    animation: fadeSlide 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeSlide {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .hyp-card:nth-child(2) { animation-delay: 0.15s; }
+  .hyp-card:nth-child(3) { animation-delay: 0.3s; }
+
+  .hyp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .hyp-confidence {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+  }
+
+  .conf-high { background: rgba(62,207,178,0.1); color: var(--accent2); border: 1px solid rgba(62,207,178,0.2); }
+  .conf-med { background: rgba(249,199,79,0.1); color: var(--accent4); border: 1px solid rgba(249,199,79,0.2); }
+  .conf-low { background: rgba(255,107,107,0.1); color: var(--accent3); border: 1px solid rgba(255,107,107,0.2); }
+
+  .hyp-text {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+
+  .hyp-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    gap: 16px;
+  }
+
+  .metric-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .metric-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 16px;
+    animation: fadeSlide 0.4s ease forwards;
+    opacity: 0;
+  }
+  .metric-card:nth-child(2) { animation-delay: 0.1s; }
+  .metric-card:nth-child(3) { animation-delay: 0.2s; }
+  .metric-card:nth-child(4) { animation-delay: 0.3s; }
+
+  .metric-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+
+  .metric-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+  }
+
+  .metric-delta {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  .delta-up { color: var(--accent3); }
+  .delta-down { color: var(--accent2); }
+
+  .segment-list { display: flex; flex-direction: column; gap: 8px; }
+
+  .seg-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    animation: fadeSlide 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .seg-item:nth-child(2) { animation-delay: 0.1s; }
+  .seg-item:nth-child(3) { animation-delay: 0.2s; }
+  .seg-item:nth-child(4) { animation-delay: 0.3s; }
+
+  .seg-bar-wrap { flex: 1; height: 4px; background: var(--border); }
+  .seg-bar { height: 100%; background: var(--accent); transition: width 1s ease; }
+  .seg-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); min-width: 130px; }
+  .seg-pct { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); min-width: 40px; text-align: right; }
+
+  .prescription-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .rx-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 16px 20px;
+    animation: fadeSlide 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .rx-card:nth-child(1) { border-left-color: var(--accent); animation-delay: 0s; }
+  .rx-card:nth-child(2) { border-left-color: var(--accent2); animation-delay: 0.15s; }
+  .rx-card:nth-child(3) { border-left-color: var(--accent4); animation-delay: 0.3s; }
+
+  .rx-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .rx-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+  }
+
+  .rx-impact {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    background: rgba(124,106,255,0.1);
+    color: var(--accent);
+    border: 1px solid rgba(124,106,255,0.2);
+  }
+
+  .rx-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* BEAM SEARCH VIZ */
+  .beam-container {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 40px;
+    overflow-x: auto;
+  }
+
+  .beam-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .beam-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 12px;
+    background: var(--accent3);
+  }
+
+  .beam-tree {
+    display: flex;
+    gap: 0;
+    min-width: 800px;
+  }
+
+  .beam-level {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+
+  .beam-level-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .beam-node {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 10px 14px;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text);
+    text-align: center;
+    position: relative;
+    width: 100%;
+    max-width: 160px;
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .beam-node:hover { border-color: var(--accent); background: var(--surface); }
+
+  .beam-node.pruned {
+    opacity: 0.3;
+    text-decoration: line-through;
+    color: var(--muted);
+  }
+
+  .beam-node.active {
+    border-color: var(--accent2);
+    background: rgba(62,207,178,0.05);
+    color: var(--accent2);
+  }
+
+  .beam-node.winner {
+    border-color: var(--accent4);
+    background: rgba(249,199,79,0.08);
+    color: var(--accent4);
+    font-weight: 500;
+  }
+
+  .beam-score {
+    font-size: 9px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  .beam-node.active .beam-score { color: var(--accent2); }
+  .beam-node.winner .beam-score { color: var(--accent4); }
+
+  /* DATA INPUTS */
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 2px;
+  }
+
+  .data-card {
+    background: var(--surface);
+    padding: 28px 32px;
+    transition: background 0.2s;
+  }
+
+  .data-card:hover { background: var(--surface2); }
+
+  .data-card-icon {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .data-card-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
+  .data-card-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .data-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .meta-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    background: var(--bg);
+    border: 1px solid var(--dim);
+    color: var(--muted);
+  }
+
+  /* KPI SECTION */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    padding: 28px 24px;
+    text-align: center;
+    transition: background 0.2s;
+  }
+
+  .kpi-card:hover { background: var(--surface2); }
+
+  .kpi-icon {
+    font-size: 20px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .kpi-name {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .kpi-val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+  }
+
+  .kpi-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 1;
+    padding: 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .footer-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    transition: color 0.2s;
+  }
+
+  .footer-links a:hover { color: var(--text); }
+
+  .footer-copy {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+  }
+
+  /* Divider */
+  .section-divider {
+    height: 1px;
+    background: var(--border);
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  /* Loader */
+  .loading-bar {
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    animation: loadBar 1.5s ease-in-out;
+    transform-origin: left;
+  }
+
+  @keyframes loadBar {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+  }
+
+  .thinking-dots span {
+    animation: blink 1.2s infinite;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent2);
+  }
+  .thinking-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .thinking-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes blink {
+    0%, 80%, 100% { opacity: 0; }
+    40% { opacity: 1; }
+  }
+
+  @media (max-width: 900px) {
+    nav { padding: 16px 24px; }
+    section { padding: 60px 24px; }
+    .hero { padding: 120px 24px 60px; }
+    .arch-grid { grid-template-columns: 1fr; }
+    .demo-body { grid-template-columns: 1fr; }
+    .data-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .hero-stats { flex-wrap: wrap; gap: 32px; }
+    .nav-links { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">EDA Agent</span>
+  <ul class="nav-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="#data">Data</a></li>
+    <li><a href="#kpis">KPIs</a></li>
+  </ul>
+  <span class="nav-badge">v1.0 · SaaS</span>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+  <div class="glow-blob blob1"></div>
+  <div class="glow-blob blob2"></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Exploratory Data Analysis Agent</div>
+    <h1 class="hero-title">
+      From Raw Data<br>
+      <span class="line2">to Product</span><br>
+      <span class="accent-word">Decisions</span>
+    </h1>
+    <p class="hero-desc">
+      An autonomous multi-agent framework that helps product managers generate hypotheses,
+      validate them against real metrics, segment users by behavior, and prescribe
+      data-driven product strategies — in minutes, not weeks.
+    </p>
+    <div class="hero-ctas">
+      <a href="#demo" class="btn-primary">Run a Demo ↓</a>
+      <a href="#architecture" class="btn-ghost">View Architecture</a>
+    </div>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num">4<span>×</span></span>
+        <span class="stat-label">Agents Collaborating</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">~<span>3</span>m</span>
+        <span class="stat-label">Time to Insight</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">100<span>%</span></span>
+        <span class="stat-label">Autonomous Workflow</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">∞</span>
+        <span class="stat-label">Hypothesis Space</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="section-inner">
+    <div class="section-label">System Design</div>
+    <h2 class="section-title">Multi-Agent Architecture</h2>
+    <p class="section-sub">Four specialized agents with distinct roles, operating as a coordinated intelligence layer over your SaaS data.</p>
+
+    <div class="arch-grid">
+      <div class="arch-card orchestrator">
+        <div class="arch-icon">🎯</div>
+        <div class="arch-card-tag">orchestrator.py</div>
+        <div class="arch-card-title">Orchestrator Agent</div>
+        <div class="arch-card-desc">The conductor. Initiates analysis, manages the overall workflow, coordinates between agents, and synthesizes the final report with executive-ready recommendations.</div>
+        <div class="arch-tools">
+          <span class="tool-tag">WorkflowManager</span>
+          <span class="tool-tag">ReportCompiler</span>
+          <span class="tool-tag">AgentRouter</span>
+          <span class="tool-tag">StateTracker</span>
+        </div>
+      </div>
+
+      <div class="arch-card data-eng">
+        <div class="arch-icon">⚙️</div>
+        <div class="arch-card-tag">agents.py · data_engineer</div>
+        <div class="arch-card-title">Data Engineer Agent</div>
+        <div class="arch-card-desc">The SQL workhorse. Responsible for all data interactions — exploring schemas, executing queries, autonomously debugging errors, and returning clean datasets.</div>
+        <div class="arch-tools">
+          <span class="tool-tag">GetDistinctValues</span>
+          <span class="tool-tag">ExecuteSQL</span>
+          <span class="tool-tag">CorrectSQL</span>
+          <span class="tool-tag">SchemaExplorer</span>
+        </div>
+      </div>
+
+      <div class="arch-card analyst">
+        <div class="arch-icon">🧠</div>
+        <div class="arch-card-tag">agents.py · principal_analyst</div>
+        <div class="arch-card-title">Principal Analyst Agent</div>
+        <div class="arch-card-desc">The brains. Receives clean data, synthesizes behavioral signals, performs deep-dive analysis, identifies anomalies, and generates the actionable prescription layer.</div>
+        <div class="arch-tools">
+          <span class="tool-tag">BehaviorSynthesizer</span>
+          <span class="tool-tag">AnomalyDetector</span>
+          <span class="tool-tag">PrescriptionEngine</span>
+          <span class="tool-tag">NarrativeBuilder</span>
+        </div>
+      </div>
+
+      <div class="arch-card hypothesis">
+        <div class="arch-icon">🔍</div>
+        <div class="arch-card-tag">workflow.py · hypothesis_engine</div>
+        <div class="arch-card-title">Hypothesis Discovery Engine</div>
+        <div class="arch-card-desc">The explorer. Uses Beam Search to intelligently navigate the hypothesis space — seeding broad ideas, pruning weak paths, and drilling down into high-signal cohorts autonomously.</div>
+        <div class="arch-tools">
+          <span class="tool-tag">BeamSearch</span>
+          <span class="tool-tag">HypothesisValidator</span>
+          <span class="tool-tag">CohortScorer</span>
+          <span class="tool-tag">PathPruner</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BEAM SEARCH VIZ -->
+<section style="padding-top: 0;">
+  <div class="section-inner">
+    <div class="section-label">Hypothesis Engine</div>
+    <h2 class="section-title">Beam Search in Action</h2>
+    <p class="section-sub">The engine doesn't guess randomly. It starts broad, scores each hypothesis against data, keeps the strongest "beams," and focuses exploration where signal is highest.</p>
+
+    <div class="beam-container">
+      <div class="beam-title">Hypothesis Tree — Churn Driver Discovery</div>
+      <div class="beam-tree">
+        <div class="beam-level">
+          <div class="beam-level-label">Seed</div>
+          <div class="beam-node active">
+            All Users<br>
+            <div class="beam-score">baseline churn: 3.1%</div>
+          </div>
+        </div>
+
+        <div class="beam-level">
+          <div class="beam-level-label">Iteration 1</div>
+          <div class="beam-node active">
+            Tenure &lt; 90d<br>
+            <div class="beam-score">churn: 6.2% ↑↑</div>
+          </div>
+          <div class="beam-node pruned">
+            Plan = Free<br>
+            <div class="beam-score">churn: 3.4% ~</div>
+          </div>
+          <div class="beam-node pruned">
+            Region = EU<br>
+            <div class="beam-score">churn: 3.0% ~</div>
+          </div>
+        </div>
+
+        <div class="beam-level">
+          <div class="beam-level-label">Iteration 2</div>
+          <div class="beam-node active">
+            Tenure &lt; 90d<br>+ No Onboarding<br>
+            <div class="beam-score">churn: 9.1% ↑↑↑</div>
+          </div>
+          <div class="beam-node pruned">
+            Tenure &lt; 90d<br>+ Plan = Team<br>
+            <div class="beam-score">churn: 5.8% ↑</div>
+          </div>
+        </div>
+
+        <div class="beam-level">
+          <div class="beam-level-label">Iteration 3</div>
+          <div class="beam-node winner">
+            Tenure &lt; 90d<br>+ No Onboarding<br>+ 0 Integrations<br>
+            <div class="beam-score">churn: 14.7% 🎯</div>
+          </div>
+          <div class="beam-node pruned">
+            Tenure &lt; 90d<br>+ No Onboarding<br>+ Mobile Only<br>
+            <div class="beam-score">churn: 7.2% ↑</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <div class="section-inner">
+    <div class="section-label">End-to-End Workflow</div>
+    <h2 class="section-title">How the Agent Works</h2>
+    <p class="section-sub">From a PM's question to a specific, validated prescription — completely autonomous.</p>
+
+    <div class="flow-steps">
+      <div class="flow-step" data-step="1">
+        <div class="step-num">01</div>
+        <div class="step-content">
+          <div class="step-label">Initiation</div>
+          <div class="step-title">PM Submits a Business Question</div>
+          <div class="step-desc">The PM inputs a high-level product concern — churn spikes, activation drops, expansion bottlenecks. The Orchestrator parses intent and initializes the agent workflow.</div>
+          <div class="step-example">INPUT → "Why are new users on our Pro plan churning at 2x the rate of Team plan users in month 1?"</div>
+        </div>
+      </div>
+
+      <div class="flow-step" data-step="2">
+        <div class="step-num">02</div>
+        <div class="step-content">
+          <div class="step-label">Diagnosis</div>
+          <div class="step-title">Hypothesis Engine Explores the Data</div>
+          <div class="step-desc">The Hypothesis Discovery Engine seeds broad cohorts, validates each against live metrics via the Data Engineer Agent, scores signal strength, and prunes low-value paths using Beam Search.</div>
+          <div class="step-example">DISCOVERY → Pro users, Tenure &lt; 30d, zero_integrations_connected = TRUE → churn rate 18.3% vs 4.1% baseline</div>
+        </div>
+      </div>
+
+      <div class="flow-step" data-step="3">
+        <div class="step-num">03</div>
+        <div class="step-content">
+          <div class="step-label">Deep Dive</div>
+          <div class="step-title">Principal Analyst Synthesizes Signals</div>
+          <div class="step-desc">The analyst agent enriches the high-signal cohort with behavioral data: session patterns, feature adoption, in-app events, support contacts — building a full narrative around the cohort.</div>
+          <div class="step-example">SIGNAL → Cohort averages 1.2 sessions in week 1 (vs 6.8 for retained). 0% used core value feature. 40% opened no emails.</div>
+        </div>
+      </div>
+
+      <div class="flow-step" data-step="4">
+        <div class="step-num">04</div>
+        <div class="step-content">
+          <div class="step-label">Prescription</div>
+          <div class="step-title">Actionable Strategy Generated</div>
+          <div class="step-desc">The Orchestrator compiles findings into a final report with specific, prioritized product and go-to-market recommendations tied directly to the validated cohort data.</div>
+          <div class="step-example">PRESCRIPTION → Launch targeted onboarding flow for Pro users with zero integrations at day 3. Predicted churn reduction: ~40%.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div class="section-inner">
+    <div class="section-label">Interactive Demo</div>
+    <h2 class="section-title">Try the Agent</h2>
+    <p class="section-sub">Ask a product question and see simulated multi-agent analysis — hypotheses, metrics, segments, and prescriptions.</p>
+
+    <div class="demo-container">
+      <div class="demo-header">
+        <div class="demo-title-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <span class="demo-label">eda-agent · interactive session</span>
+        </div>
+        <div class="demo-status">
+          <div class="status-dot"></div>
+          AGENT READY
+        </div>
+      </div>
+
+      <div class="demo-body">
+        <div class="demo-left">
+          <div class="input-label">Product Question</div>
+          <textarea class="demo-textarea" id="queryInput" placeholder="e.g. Why are trial users not converting to paid plans?">Why are users on our Pro plan churning significantly more than Team plan users in their first 30 days?</textarea>
+
+          <div class="demo-selects">
+            <div>
+              <div class="input-label" style="margin-top:0">Focus Area</div>
+              <select class="demo-select" id="focusSelect">
+                <option value="churn">Churn Analysis</option>
+                <option value="activation">Activation</option>
+                <option value="expansion">Expansion</option>
+                <option value="engagement">Engagement</option>
+              </select>
+            </div>
+            <div>
+              <div class="input-label" style="margin-top:0">Time Window</div>
+              <select class="demo-select" id="windowSelect">
+                <option value="30d">Last 30 Days</option>
+                <option value="90d">Last 90 Days</option>
+                <option value="12m">Last 12 Months</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="run-btn" onclick="runAgent()" id="runBtn">▶ Run Agent Analysis</button>
+
+          <div id="loadingBar" style="display:none; margin-top:2px;">
+            <div class="loading-bar"></div>
+          </div>
+
+          <div id="thinkingMsg" style="display:none; margin-top:16px; font-family: 'DM Mono', monospace; font-size:12px; color: var(--muted);">
+            Agent thinking<span class="thinking-dots"><span>.</span><span>.</span><span>.</span></span>
+          </div>
+        </div>
+
+        <div class="demo-right">
+          <div class="output-tabs">
+            <button class="tab-btn active" onclick="switchTab('hypotheses', this)">Hypotheses</button>
+            <button class="tab-btn" onclick="switchTab('metrics', this)">Metrics</button>
+            <button class="tab-btn" onclick="switchTab('segments', this)">Segments</button>
+            <button class="tab-btn" onclick="switchTab('prescription', this)">Prescription</button>
+          </div>
+
+          <!-- HYPOTHESES -->
+          <div class="output-panel active" id="panel-hypotheses">
+            <div class="output-empty" id="empty-hypotheses">
+              <div class="output-empty-icon">⟳</div>
+              Run the agent to generate hypotheses
+            </div>
+            <div id="hyp-results" style="display:none; display:none; flex-direction:column; gap:10px;"></div>
+          </div>
+
+          <!-- METRICS -->
+          <div class="output-panel" id="panel-metrics">
+            <div class="output-empty" id="empty-metrics">
+              <div class="output-empty-icon">📊</div>
+              Run the agent to validate metrics
+            </div>
+            <div id="met-results" style="display:none;"></div>
+          </div>
+
+          <!-- SEGMENTS -->
+          <div class="output-panel" id="panel-segments">
+            <div class="output-empty" id="empty-segments">
+              <div class="output-empty-icon">👥</div>
+              Run the agent to segment users
+            </div>
+            <div id="seg-results" style="display:none;"></div>
+          </div>
+
+          <!-- PRESCRIPTION -->
+          <div class="output-panel" id="panel-prescription">
+            <div class="output-empty" id="empty-prescription">
+              <div class="output-empty-icon">💊</div>
+              Run the agent to get prescriptions
+            </div>
+            <div id="rx-results" style="display:none;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA INPUTS -->
+<section id="data">
+  <div class="section-inner">
+    <div class="section-label">Data Layer</div>
+    <h2 class="section-title">Data Inputs & Sources</h2>
+    <p class="section-sub">The agent ingests structured data from six source categories, building a comprehensive picture of user behavior and product health.</p>
+
+    <div class="data-grid">
+      <div class="data-card">
+        <div class="data-card-icon">👤</div>
+        <div class="data-card-name">User Profile Data</div>
+        <div class="data-card-desc">Core identity, subscription plan, tenure, seat count, billing status, contract type, and account tier.</div>
+        <div class="data-card-meta">
+          <span class="meta-tag">plan_type</span>
+          <span class="meta-tag">tenure_days</span>
+          <span class="meta-tag">seat_count</span>
+          <span class="meta-tag">contract_status</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">⚡</div>
+        <div class="data-card-name">Product Behavior</div>
+        <div class="data-card-desc">Session frequency, feature adoption, core value action completions, API usage, integrations connected.</div>
+        <div class="data-card-meta">
+          <span class="meta-tag">dau_wau_ratio</span>
+          <span class="meta-tag">features_used</span>
+          <span class="meta-tag">integrations_count</span>
+          <span class="meta-tag">api_calls</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">🤖</div>
+        <div class="data-card-name">ML Model Scores</div>
+        <div class="data-card-desc">Real-time and batch churn propensity scores, expansion likelihood, health scores, and LTV predictions.</div>
+        <div class="data-card-meta">
+          <span class="meta-tag">churn_score_rt</span>
+          <span class="meta-tag">churn_score_weekly</span>
+          <span class="meta-tag">health_score</span>
+          <span class="meta-tag">ltv_predicted</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">💬</div>
+        <div class="data-card-name">Conversational Intelligence</div>
+        <div class="data-card-desc">Support ticket summaries, NPS verbatims, in-app chat transcripts, and sentiment extracted via NLP.</div>
+        <div class="data-card-meta">
+          <span class="meta-tag">sentiment_score</span>
+          <span class="meta-tag">complaint_categories</span>
+          <span class="meta-tag">nps_verbatim</span>
+          <span class="meta-tag">ticket_volume</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">🔍</div>
+        <div class="data-card-name">XAI / Explainable AI</div>
+        <div class="data-card-desc">Feature importance outputs from churn and health models — weekly D8-10 insights identifying top churn drivers per segment.</div>
+        <div class="data-card-meta">
+          <span class="meta-tag">feature_importance</span>
+          <span class="meta-tag">shap_values</span>
+          <span class="meta-tag">driver_ranking</span>
+          <span class="meta-tag">d8_insights</span>
+        </div>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-icon">🌐</div>
+        <div class="data-card-name">Competitive & Market</div>
+        <div class="data-card-desc">Competitor pricing changes, feature gap analysis, market segment benchmarks, and industry churn norms.</div>
+        <div class="data-card-meta">
+          <span class="meta-tag">competitor_pricing</span>
+          <span class="meta-tag">market_churn_norm</span>
+          <span class="meta-tag">feature_gaps</span>
+          <span class="meta-tag">win_loss_data</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- KPIs -->
+<section id="kpis">
+  <div class="section-inner">
+    <div class="section-label">Analytics Layer</div>
+    <h2 class="section-title">Agent KPIs & Tracked Metrics</h2>
+    <p class="section-sub">The metrics the agent monitors, validates against, and surfaces in every analysis run.</p>
+
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <span class="kpi-icon">📉</span>
+        <div class="kpi-name">Churn Rate</div>
+        <div class="kpi-val" style="color:var(--accent3)">5.2%</div>
+        <div class="kpi-sub">30-day rolling avg</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">🎯</span>
+        <div class="kpi-name">Capture Rate</div>
+        <div class="kpi-val" style="color:var(--accent2)">68%</div>
+        <div class="kpi-sub">High-risk users identified</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">⚡</span>
+        <div class="kpi-name">Activation Rate</div>
+        <div class="kpi-val" style="color:var(--accent4)">41%</div>
+        <div class="kpi-sub">Day 7 core action</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">📈</span>
+        <div class="kpi-name">NRR</div>
+        <div class="kpi-val" style="color:var(--accent)">108%</div>
+        <div class="kpi-sub">Net Revenue Retention</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">💬</span>
+        <div class="kpi-name">Sentiment</div>
+        <div class="kpi-val" style="color:var(--accent2)">+0.62</div>
+        <div class="kpi-sub">Avg Convo IQ score</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">🔌</span>
+        <div class="kpi-name">Integration Adoption</div>
+        <div class="kpi-val" style="color:var(--accent4)">29%</div>
+        <div class="kpi-sub">Users with ≥1 integration</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">🏃</span>
+        <div class="kpi-name">DAU/WAU</div>
+        <div class="kpi-val" style="color:var(--accent)">0.34</div>
+        <div class="kpi-sub">Stickiness ratio</div>
+      </div>
+      <div class="kpi-card">
+        <span class="kpi-icon">🔁</span>
+        <div class="kpi-name">Expansion Rate</div>
+        <div class="kpi-val" style="color:var(--accent3)">12%</div>
+        <div class="kpi-sub">Seat / plan upgrades MoM</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">EDA Agent</span>
+  <ul class="footer-links">
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#demo">Demo</a></li>
+    <li><a href="https://github.com" target="_blank">GitHub</a></li>
+  </ul>
+  <span class="footer-copy">Built for PM intelligence · SaaS Framework</span>
+</footer>
+
+<script>
+  // Scroll animation for flow steps
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.flow-step').forEach(el => observer.observe(el));
+
+  // Tab switching
+  function switchTab(name, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.output-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  // Demo agent simulation
+  const scenarios = {
+    churn: {
+      hypotheses: [
+        { text: "Users with tenure < 30 days and zero integrations connected churn at 14.7% — 4.8x the baseline rate of 3.1%.", confidence: "HIGH", segment: "Early-stage · No integrations", metric: "14.7% churn" },
+        { text: "Pro plan users who never triggered the 'core value action' in week 1 have a 9.2% 30-day churn rate vs. 2.8% for those who did.", confidence: "HIGH", segment: "Pro plan · Week 1 inactive", metric: "9.2% churn" },
+        { text: "Solo users (seat_count = 1) on Pro plans show 2.1x higher churn than team-based Pro accounts, suggesting a plan-fit mismatch.", confidence: "MED", segment: "Solo Pro users", metric: "2.1x churn lift" },
+      ],
+      metrics: [
+        { label: "Cohort Churn Rate", value: "14.7%", delta: "+11.6pp vs baseline", up: true },
+        { label: "Baseline Churn", value: "3.1%", delta: "Control group", up: false },
+        { label: "Cohort Size", value: "2,840", delta: "8.3% of Pro users", up: false },
+        { label: "Revenue at Risk", value: "$112K", delta: "MRR exposed", up: true },
+      ],
+      segments: [
+        { name: "No integrations · <30d", pct: 78 },
+        { name: "Solo Pro · <30d", pct: 62 },
+        { name: "No core action · Week 1", pct: 55 },
+        { name: "0 sessions · Week 2", pct: 41 },
+      ],
+      prescriptions: [
+        { title: "Targeted Onboarding Intervention", desc: "Launch a day-3 in-app prompt for Pro users with 0 integrations, guiding them to connect their first tool. Predicted churn reduction: ~38% for this cohort.", impact: "HIGH IMPACT" },
+        { title: "Pro Plan Fit Audit", desc: "Identify solo users on Pro who haven't used team features. Offer a plan downgrade or personalized success call to reduce friction and improve retention.", impact: "MED IMPACT" },
+        { title: "Core Value Action Gate", desc: "Trigger a success milestone email when users complete their first core value action, reinforcing behavior and improving week-2 retention by creating a habit loop.", impact: "HIGH IMPACT" },
+      ]
+    },
+    activation: {
+      hypotheses: [
+        { text: "Users who don't complete setup within 48 hours of signup have a 61% lower 30-day retention rate.", confidence: "HIGH", segment: "Setup incomplete · 48h", metric: "61% lower retention" },
+        { text: "Accounts invited by an existing user activate at 2.3x the rate of self-signup accounts, suggesting social proof is a strong activation lever.", confidence: "HIGH", segment: "Invite-origin users", metric: "2.3x activation" },
+        { text: "Mobile-only users in week 1 have 40% lower activation than web-primary users, likely due to reduced feature discoverability.", confidence: "MED", segment: "Mobile-only · W1", metric: "40% lower activation" },
+      ],
+      metrics: [
+        { label: "Activation Rate (D7)", value: "41%", delta: "-6pp MoM", up: true },
+        { label: "Time-to-Activate", value: "3.2d", delta: "Median days to first value", up: false },
+        { label: "Invited vs Self-signup", value: "2.3×", delta: "Activation lift", up: false },
+        { label: "Setup Completion", value: "54%", delta: "Within 48 hours", up: true },
+      ],
+      segments: [
+        { name: "Invite-origin · Completed setup", pct: 82 },
+        { name: "Self-signup · Setup complete", pct: 58 },
+        { name: "Self-signup · Incomplete setup", pct: 22 },
+        { name: "Mobile-only · W1", pct: 18 },
+      ],
+      prescriptions: [
+        { title: "48-Hour Setup Nudge", desc: "Send a personalized email + in-app notification at hour 24 for users with incomplete setup. Include a 5-minute quick-start video. Target: 15pp improvement in setup completion.", impact: "HIGH IMPACT" },
+        { title: "Referral Loop Expansion", desc: "Surface in-product invite prompts after key milestones (first core action). Convert self-signup users into invite-origin pathways to boost activation rate.", impact: "MED IMPACT" },
+        { title: "Mobile Onboarding Redesign", desc: "Audit mobile onboarding flow against web. Add progressive disclosure for complex features and mobile-specific tooltips for top 3 activation actions.", impact: "MED IMPACT" },
+      ]
+    },
+    expansion: {
+      hypotheses: [
+        { text: "Accounts with 5+ active users who have not upgraded from Team to Business show a 73% correlation with high feature utilization, suggesting latent upgrade intent.", confidence: "HIGH", segment: "5+ users · Team plan", metric: "73% upgrade signal" },
+        { text: "Accounts using more than 3 integrations expand at 2.8x the rate of single-integration accounts within 6 months.", confidence: "HIGH", segment: "3+ integrations", metric: "2.8x expansion rate" },
+        { text: "Accounts where the admin has viewed the pricing page 2+ times in 30 days but not upgraded show high-intent stall behavior.", confidence: "MED", segment: "Pricing page viewers", metric: "High-intent stall" },
+      ],
+      metrics: [
+        { label: "NRR", value: "108%", delta: "+3pp vs prior quarter", up: false },
+        { label: "Expansion Rate MoM", value: "12%", delta: "Plan + seat upgrades", up: false },
+        { label: "3+ Integrations Lift", value: "2.8×", delta: "Expansion multiplier", up: false },
+        { label: "High-Intent Stall", value: "430", delta: "Accounts at risk", up: true },
+      ],
+      segments: [
+        { name: "5+ users · High feature use", pct: 73 },
+        { name: "3+ integrations connected", pct: 65 },
+        { name: "Pricing page 2+ views", pct: 48 },
+        { name: "Admin usage spike · 30d", pct: 34 },
+      ],
+      prescriptions: [
+        { title: "Proactive High-Intent Outreach", desc: "Flag accounts with pricing page 2+ views and no upgrade in 14 days for a CS reach-out. Offer a 30-min ROI call. Conversion target: 18%.", impact: "HIGH IMPACT" },
+        { title: "Integration-Led Growth Push", desc: "For accounts with 1-2 integrations, surface contextual prompts showing the value of connecting integration #3. Include case study from similar accounts.", impact: "HIGH IMPACT" },
+        { title: "Team Plan Upgrade Trigger", desc: "When seat count hits 4, trigger an in-app banner showing per-seat pricing advantage of Business plan with admin analytics features.", impact: "MED IMPACT" },
+      ]
+    },
+    engagement: {
+      hypotheses: [
+        { text: "Users who receive a personalized weekly digest email have 34% higher DAU/WAU ratios than those who don't, with the effect strongest in months 2–4.", confidence: "HIGH", segment: "Email digest recipients", metric: "34% higher stickiness" },
+        { text: "Accounts with 3+ team members collaborating in the same week retain at 91% over 6 months, compared to 67% for solo-active accounts.", confidence: "HIGH", segment: "Multi-user weekly active", metric: "91% vs 67% retention" },
+        { text: "Feature adoption drops 52% after 30 days for users who never discovered the 'saved views' feature, correlating with reduced daily sessions.", confidence: "MED", segment: "No saved views · 30d", metric: "52% feature drop" },
+      ],
+      metrics: [
+        { label: "DAU/WAU Ratio", value: "0.34", delta: "-0.04 vs benchmark", up: true },
+        { label: "Multi-user Session Rate", value: "38%", delta: "Accounts with collab sessions", up: false },
+        { label: "Email Digest Lift", value: "34%", delta: "Stickiness improvement", up: false },
+        { label: "Feature Discovery Rate", value: "29%", delta: "Core features found by D14", up: true },
+      ],
+      segments: [
+        { name: "Email digest · Active · 2-4mo", pct: 71 },
+        { name: "3+ collab sessions weekly", pct: 65 },
+        { name: "Saved views adopted", pct: 52 },
+        { name: "No email + solo user", pct: 21 },
+      ],
+      prescriptions: [
+        { title: "Personalized Activity Digest", desc: "Expand weekly digest to all users with ML-personalized content showing their team's activity and new feature tips. A/B test subject lines. Expected DAU/WAU lift: +0.06.", impact: "HIGH IMPACT" },
+        { title: "Collaborative Feature Nudge", desc: "At day 10, prompt solo-active users to invite a colleague with a 'better together' message showing collaboration-based retention stats.", impact: "HIGH IMPACT" },
+        { title: "Power Feature Discovery Flow", desc: "Add contextual tooltips at session 5+ surfacing 'saved views' and advanced filters. Gate behind a 'Did you know?' moment tied to their most-used workflow.", impact: "MED IMPACT" },
+      ]
+    }
+  };
+
+  function runAgent() {
+    const focus = document.getElementById('focusSelect').value;
+    const btn = document.getElementById('runBtn');
+    btn.disabled = true;
+    btn.textContent = '⟳ Agents Running...';
+
+    document.getElementById('loadingBar').style.display = 'block';
+    document.getElementById('thinkingMsg').style.display = 'block';
+
+    // hide all results
+    ['hypotheses','metrics','segments','prescription'].forEach(k => {
+      document.getElementById('empty-' + k).style.display = 'flex';
+      const r = document.getElementById(k === 'prescription' ? 'rx-results' : k.slice(0,3) + '-results');
+      if (r) r.style.display = 'none';
+    });
+
+    // Simulate multi-agent processing time
+    setTimeout(() => {
+      const data = scenarios[focus] || scenarios.churn;
+      renderResults(data);
+      btn.disabled = false;
+      btn.textContent = '▶ Run Agent Analysis';
+      document.getElementById('loadingBar').style.display = 'none';
+      document.getElementById('thinkingMsg').style.display = 'none';
+    }, 2200);
+  }
+
+  function renderResults(data) {
+    // Hypotheses
+    const hypEl = document.getElementById('hyp-results');
+    hypEl.innerHTML = data.hypotheses.map(h => `
+      <div class="hyp-card">
+        <div class="hyp-header">
+          <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${h.segment}</span>
+          <span class="hyp-confidence conf-${h.confidence.toLowerCase()}">${h.confidence}</span>
+        </div>
+        <div class="hyp-text">${h.text}</div>
+        <div class="hyp-meta">
+          <span>→ ${h.metric}</span>
+        </div>
+      </div>
+    `).join('');
+    document.getElementById('empty-hypotheses').style.display = 'none';
+    hypEl.style.display = 'flex';
+    hypEl.style.flexDirection = 'column';
+    hypEl.style.gap = '10px';
+
+    // Metrics
+    const metEl = document.getElementById('met-results');
+    metEl.innerHTML = `<div class="metric-row">${data.metrics.map(m => `
+      <div class="metric-card">
+        <div class="metric-label">${m.label}</div>
+        <div class="metric-value">${m.value}</div>
+        <div class="metric-delta ${m.up ? 'delta-up' : 'delta-down'}">${m.delta}</div>
+      </div>
+    `).join('')}</div>`;
+    document.getElementById('empty-metrics').style.display = 'none';
+    metEl.style.display = 'block';
+
+    // Segments
+    const segEl = document.getElementById('seg-results');
+    segEl.innerHTML = `<div class="segment-list">${data.segments.map(s => `
+      <div class="seg-item">
+        <span class="seg-name">${s.name}</span>
+        <div class="seg-bar-wrap"><div class="seg-bar" style="width:${s.pct}%"></div></div>
+        <span class="seg-pct">${s.pct}%</span>
+      </div>
+    `).join('')}</div>`;
+    document.getElementById('empty-segments').style.display = 'none';
+    segEl.style.display = 'block';
+
+    // Prescriptions
+    const rxEl = document.getElementById('rx-results');
+    rxEl.innerHTML = `<div class="prescription-list">${data.prescriptions.map(r => `
+      <div class="rx-card">
+        <div class="rx-header">
+          <span class="rx-title">${r.title}</span>
+          <span class="rx-impact">${r.impact}</span>
+        </div>
+        <div class="rx-desc">${r.desc}</div>
+      </div>
+    `).join('')}</div>`;
+    document.getElementById('empty-prescription').style.display = 'none';
+    rxEl.style.display = 'block';
+  }
+</script>
+</body>
+</html>
