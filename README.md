@@ -2,11 +2,11 @@
 
 AI powered exploratory data analysis agent that automatically:
 
-• detects churn drivers
-• identifies high risk customer cohorts
-• explains charts and patterns
-• generates product insights
-• recommends product actions
+ 1. detects churn drivers
+ 2. identifies high risk customer cohorts
+ 3. explains charts and patterns
+ 4. generates product insights
+ 5. recommends product actions
 
 The goal of this project is to help product managers move from **data exploration to product decisions**.
 
@@ -18,10 +18,11 @@ Product teams rely on dashboards and manual analysis to understand customer beha
 
 However most teams struggle to answer questions like:
 
-• Why are customers churning
-• Which cohort is most at risk
-• Which offer improves retention
-• What product action should we take
+1. Why are customers churning
+2. Which cohort is most at risk
+3. What are the churn drivers
+4. Which offer improves retention
+5. What product action should we take
 
 This project demonstrates how an **AI Product Intelligence Agent** can automate these insights.
 
@@ -46,16 +47,16 @@ This transforms analytics from **passive dashboards into active decision intelli
 
 From a telecom churn dataset the agent can identify insights such as:
 
-Top Churn Driver
+1. Top Churn Driver
 Customers with tenure under 6 months churn significantly more than long term customers.
 
-High Risk Cohort
+2. High Risk Cohort
 Basic plan users acquired through Online Ads using Android devices.
 
-Offer Effectiveness
+3. Offer Effectiveness
 Fresh Start offer of $450 reduces churn compared to $350.
 
-Recommended Product Action
+4. Recommended Product Action
 Increase the $450 offer for high risk new customers to improve retention.
 
 ---
@@ -64,22 +65,22 @@ Increase the $450 offer for high risk new customers to improve retention.
 
 The system includes several analytical components.
 
-Data Profiling Engine
+1. Data Profiling Engine
 Analyzes dataset structure and detects numeric and categorical columns.
 
-Exploratory Analysis Engine
+2. Exploratory Analysis Engine
 Generates summary statistics, distributions, and correlations.
 
-Cohort Analysis Engine
+3. Cohort Analysis Engine
 Compares metrics across user segments such as device type, acquisition channel, and plan type.
 
-Churn Driver Detection
+4. Churn Driver Detection
 Identifies variables most associated with churn behavior.
 
-Insight Generator
+5. Insight Generator
 Explains charts and patterns in plain English.
 
-Recommendation Engine
+6. Recommendation Engine
 Suggests product actions based on detected insights.
 
 ---
@@ -97,10 +98,12 @@ Suggests product actions based on detected insights.
 
 ## Use Cases
 
-Product managers
-Growth teams
-Customer retention teams
-Product analytics teams
+1. Product managers
+2. Program Manager
+3. Executive Leadership
+4. Growth teams
+5. Customer retention teams
+6. Product analytics teams
 
 ---
 
@@ -108,11 +111,11 @@ Product analytics teams
 
 Planned improvements include:
 
-• automated anomaly detection
-• causal inference for churn drivers
-• experiment recommendation engine
-• product metric tree analysis
-• real time data integration
+1. automated anomaly detection
+2. causal inference for churn drivers
+3. experiment recommendation engine
+4. product metric tree analysis
+5. real time data integration
 
 ---
 
