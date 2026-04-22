@@ -1495,6 +1495,62 @@ body {
 .btn-clear-chat:hover { color: var(--red); border-color: var(--red-mid); }
 
 /* ═══════════════════════════════════════════
+   SAMPLE BANNER
+═══════════════════════════════════════════ */
+.sample-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 18px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.sample-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #78350f;
+}
+.sample-banner-icon { font-size: 15px; flex-shrink: 0; }
+.sample-banner-text strong { font-weight: 600; }
+.btn-upload-csv {
+  background: var(--ink);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-upload-csv:hover { background: var(--ink2); transform: translateY(-1px); }
+.btn-upload-csv-topbar {
+  background: white;
+  color: var(--ink);
+  border: 1.5px solid var(--border2);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font-family: 'Geist', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.btn-upload-csv-topbar:hover { border-color: var(--ink); color: var(--ink); }
+
+/* ═══════════════════════════════════════════
    RESPONSIVE
 ═══════════════════════════════════════════ */
 @media (max-width: 800px) {
@@ -1891,6 +1947,7 @@ body {
     </div>
   </div>
   <div class="topbar-right">
+    <button class="btn-upload-csv-topbar hidden" id="topbarUploadBtn" onclick="showUploadFlow()">📁 Upload your own CSV</button>
     <span class="chip chip-neutral" id="statusChip">No data loaded</span>
     <span class="chip chip-blue">Client-side only</span>
   </div>
@@ -1903,6 +1960,15 @@ body {
   <!-- Progress bar -->
   <div class="progress-bar-wrap" id="progressWrap">
     <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <!-- Sample data banner -->
+  <div class="sample-banner hidden" id="sampleBanner">
+    <div class="sample-banner-left">
+      <span class="sample-banner-icon">📊</span>
+      <span class="sample-banner-text"><strong>Viewing sample dataset</strong> — 1,080 users · 12 months of SaaS metrics · Churn, revenue, feature adoption &amp; DAU trends</span>
+    </div>
+    <button class="btn-upload-csv" onclick="showUploadFlow()">📁 Upload your own CSV</button>
   </div>
 
   <!-- ── 1. UPLOAD ── -->
@@ -2716,7 +2782,9 @@ function processFile(file) {
       showProgress(100);
       setTimeout(() => hideProgress(), 600);
 
-      // Show file bar
+      // Hide sample banner, show file bar
+      document.getElementById('sampleBanner').classList.add('hidden');
+      document.getElementById('topbarUploadBtn').classList.add('hidden');
       document.getElementById('fileBar').classList.add('visible');
       document.getElementById('fileBarName').textContent = file.name;
       document.getElementById('fileBarMeta').textContent =
@@ -3635,21 +3703,17 @@ function resetAll() {
   if (cohortChartInstance) { try { cohortChartInstance.destroy(); } catch(e){} }
   cohortChartInstance = null;
 
-  // Reset state
   STATE = { rawData:[], headers:[], columnMeta:{}, numericCols:[], catCols:[], fileName:'', rowCount:0, chartInstances:{} };
 
-  // Reset UI
   document.getElementById('fileInput').value = '';
   document.getElementById('fileBar').classList.remove('visible');
   document.getElementById('cohortResults').classList.remove('visible');
-  ['sectionIntel','sectionChurn','sectionSummary','sectionCharts','sectionCohort','sectionHyp','sectionInsights','sectionReco','sectionQuery']
-    .forEach(id => document.getElementById(id).classList.add('hidden'));
   clearChat(true);
 
-  document.getElementById('statusChip').textContent = 'No data loaded';
-  document.getElementById('statusChip').className   = 'chip chip-neutral';
+  toast('File removed — reloading sample dataset…');
 
-  toast('Dataset removed.');
+  // Return to sample data view
+  setTimeout(() => loadSampleData(), 400);
 }
 
 /* ════════════════════════════════════════════════
@@ -4359,6 +4423,173 @@ function renderIntelligenceSummary() {
 
   document.getElementById('intelNarrative').innerHTML = narrative;
 }
+
+/* ════════════════════════════════════════════════
+   SAMPLE DATA — Realistic SaaS PM metrics
+════════════════════════════════════════════════ */
+function generateSampleData() {
+  const months = [
+    'Jan 2025','Feb 2025','Mar 2025','Apr 2025','May 2025','Jun 2025',
+    'Jul 2025','Aug 2025','Sep 2025','Oct 2025','Nov 2025','Dec 2025'
+  ];
+  const plans   = ['Free','Starter','Professional','Enterprise'];
+  const regions = ['North America','Europe','APAC','LATAM'];
+
+  // Monthly new signups (growing trend with slight seasonality)
+  const monthlySignups = [52, 61, 68, 74, 83, 97, 91, 105, 118, 112, 129, 149];
+
+  // Churn probability by plan
+  const churnByPlan = { Free: 0.28, Starter: 0.13, Professional: 0.06, Enterprise: 0.025 };
+
+  // MRR by plan (USD)
+  const revenueByPlan = { Free: 0, Starter: 39, Professional: 119, Enterprise: 449 };
+
+  // Plan distribution weights
+  const planWeights = [0.44, 0.30, 0.19, 0.07];
+
+  // Feature adoption rates by plan
+  const featureAdoption = {
+    feature_core:          { Free: 0.72, Starter: 0.89, Professional: 0.97, Enterprise: 0.99 },
+    feature_dashboard:     { Free: 0.30, Starter: 0.60, Professional: 0.84, Enterprise: 0.93 },
+    feature_api:           { Free: 0.04, Starter: 0.17, Professional: 0.55, Enterprise: 0.91 },
+    feature_notifications: { Free: 0.38, Starter: 0.53, Professional: 0.71, Enterprise: 0.80 },
+    feature_export:        { Free: 0.09, Starter: 0.26, Professional: 0.47, Enterprise: 0.77 },
+  };
+
+  // Seeded deterministic PRNG
+  let seed = 31337;
+  function rand()        { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }
+  function rInt(a, b)    { return Math.floor(rand() * (b - a + 1)) + a; }
+  function rPick(arr)    { return arr[Math.floor(rand() * arr.length)]; }
+  function rBool(p)      { return rand() < p ? 1 : 0; }
+  function rNorm(mu, sd) { // Box-Muller
+    const u = rand(), v = rand();
+    return Math.round(mu + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v));
+  }
+
+  const rows = [];
+  let uid = 1;
+
+  months.forEach((month, mi) => {
+    const n = monthlySignups[mi];
+    for (let i = 0; i < n; i++) {
+      // Weighted plan pick
+      const pr = rand();
+      let plan = 'Free', cum = 0;
+      for (let pi = 0; pi < plans.length; pi++) {
+        cum += planWeights[pi];
+        if (pr <= cum) { plan = plans[pi]; break; }
+      }
+
+      const region  = rPick(regions);
+      const churned = rBool(churnByPlan[plan]);
+
+      // Engagement correlates with plan and inversely with churn
+      const engBase  = (churned ? 0.25 : 0.72) + (plans.indexOf(plan) * 0.06);
+      const dau      = Math.max(1, Math.min(30, rNorm(engBase * 26, 5)));
+      const sessions = Math.max(1, Math.min(20, rNorm(engBase * 7, 2)));
+      const nps      = churned ? rInt(1, 5) : rInt(5, 10);
+
+      // Add revenue noise
+      const rev = plan === 'Free' ? 0 : Math.max(0, revenueByPlan[plan] + rInt(-8, 8));
+
+      rows.push({
+        user_id:               uid++,
+        month_joined:          month,
+        plan,
+        region,
+        feature_core:          rBool(featureAdoption.feature_core[plan]),
+        feature_dashboard:     rBool(featureAdoption.feature_dashboard[plan]),
+        feature_api:           rBool(featureAdoption.feature_api[plan]),
+        feature_notifications: rBool(featureAdoption.feature_notifications[plan]),
+        feature_export:        rBool(featureAdoption.feature_export[plan]),
+        churned,
+        monthly_revenue:       rev,
+        dau_last_30:           dau,
+        sessions_per_week:     sessions,
+        nps_score:             nps,
+      });
+    }
+  });
+
+  return rows;
+}
+
+function loadSampleData() {
+  const data = generateSampleData();
+
+  STATE.rawData   = data;
+  STATE.headers   = Object.keys(data[0]);
+  STATE.rowCount  = data.length;
+  STATE.fileName  = 'sample_saas_metrics.csv';
+  STATE.isSample  = true;
+
+  showProgress(15);
+  analyseColumns();
+  showProgress(55);
+
+  renderIntelligenceSummary();
+  renderChurnDrivers();
+  renderSummary();
+  renderCharts();
+  renderHypotheses();
+  renderInsights();
+  renderRecommendations();
+  populateCohortControls();
+
+  showProgress(100);
+  setTimeout(() => hideProgress(), 500);
+
+  // Show sample banner + topbar button, hide upload section
+  document.getElementById('sampleBanner').classList.remove('hidden');
+  document.getElementById('topbarUploadBtn').classList.remove('hidden');
+  document.getElementById('sectionUpload').classList.add('hidden');
+
+  // Show all analysis sections
+  ['sectionIntel','sectionChurn','sectionSummary','sectionCharts',
+   'sectionCohort','sectionHyp','sectionInsights','sectionReco','sectionQuery']
+    .forEach(id => document.getElementById(id).classList.remove('hidden'));
+  populateQueryExamples();
+
+  document.getElementById('statusChip').textContent = `${STATE.rowCount.toLocaleString()} rows loaded`;
+  document.getElementById('statusChip').className   = 'chip chip-green';
+
+  setTimeout(() => {
+    document.getElementById('sectionIntel').scrollIntoView({ behavior:'smooth', block:'start' });
+  }, 300);
+}
+
+function showUploadFlow() {
+  // Reset state but show upload zone instead of reloading sample
+  Object.values(STATE.chartInstances).forEach(c => { try { c.destroy(); } catch(e){} });
+  if (cohortChartInstance) { try { cohortChartInstance.destroy(); } catch(e){} }
+  cohortChartInstance = null;
+
+  STATE = { rawData:[], headers:[], columnMeta:{}, numericCols:[], catCols:[], fileName:'', rowCount:0, chartInstances:{} };
+
+  document.getElementById('fileInput').value = '';
+  document.getElementById('fileBar').classList.remove('visible');
+  document.getElementById('cohortResults').classList.remove('visible');
+  document.getElementById('sampleBanner').classList.add('hidden');
+  document.getElementById('topbarUploadBtn').classList.add('hidden');
+  document.getElementById('sectionUpload').classList.remove('hidden');
+
+  ['sectionIntel','sectionChurn','sectionSummary','sectionCharts',
+   'sectionCohort','sectionHyp','sectionInsights','sectionReco','sectionQuery']
+    .forEach(id => document.getElementById(id).classList.add('hidden'));
+  clearChat(true);
+
+  document.getElementById('statusChip').textContent = 'No data loaded';
+  document.getElementById('statusChip').className   = 'chip chip-neutral';
+
+  // Scroll to upload
+  document.getElementById('sectionUpload').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+// Auto-load sample data on page ready
+document.addEventListener('DOMContentLoaded', () => {
+  loadSampleData();
+});
 </script>
 </body>
 </html>
